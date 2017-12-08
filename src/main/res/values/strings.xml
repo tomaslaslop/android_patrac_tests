@@ -1,0 +1,98 @@
+<!--
+  Copyright 2013 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<resources>
+    <string name="welcome_message">
+        Vítejte v monitoru pátrače. Zmáčkněte tlačítko Připojit pro spojení se serverem.
+        Aplikace odesílá vaši polohu na server. Štáb může sledovat vaši pozici v reálném čase.
+        Pro běh potřebujete zapnutou GPS a datové připojení na Internet (např. 4G LTE).
+        Štáb vám také může zaslat zprávu, včetně GPX souboru.
+        Vy můžete zaslat zprávu do štábu (zasílání zpráv z klienta není zatím implementováno).
+    </string>
+    <string name="fetch_text">Připojit</string>
+    <string name="clear_text">Nastavení</string>
+    <string name="connection_error">Chyba připojení.</string>
+    <string name="fetch_cancelled">Spojení zrušeno.</string>
+    <string name="title_activity_message_view">Zpráva</string>
+    <string name="title_activity_settings">Nastavení</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">Obecné</string>
+
+    <string name="pref_title_social_recommendations">Povolit příjem zpráv</string>
+    <string name="pref_description_social_recommendations">Povolit příjem zpráv
+    </string>
+
+    <string name="pref_title_display_name">Jméno</string>
+    <string name="pref_default_display_name">Karel Vomáčka</string>
+
+    <string name="pref_title_add_friends_to_messages">Příjmat zprávy</string>
+    <string-array name="pref_example_list_titles">
+        <item>Vždy</item>
+        <item>Když je to možné</item>
+        <item>Nikdy</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Synchronizace</string>
+
+    <string name="pref_title_sync_frequency">Frekvence</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>30 sekund</item>
+        <item>1 minuta</item>
+        <item>5 minut</item>
+        <item>Nikdy</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_system_sync_settings">Nastavení synchronizace</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Upozornění</string>
+
+    <string name="pref_title_new_message_notifications">Upozornění na novou zprávu</string>
+
+    <string name="pref_title_ringtone">Zvuk</string>
+    <string name="pref_ringtone_silent">Ticho</string>
+
+    <string name="pref_title_vibrate">Vibrace</string>
+</resources>
