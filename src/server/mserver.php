@@ -1,7 +1,7 @@
 <?php
 
 function uploadFile($id) {
-$target_dir = "/var/www/html/patrac/uploads/".$id."/";
+$target_dir = "/var/local/patrac/".$id."/";
 $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
 $uploadOk = 1;
 
@@ -31,23 +31,33 @@ if ($uploadOk == 0) {
 }
 }
 
+
 mysql_connect("127.0.0.1", "*", "*") or die(mysql_error());;
 mysql_select_db("patrac") or die(mysql_error());
+
+if (!isset($_REQUEST["searchid"])) die();
+if ($_REQUEST["searchid"] == '') die();
+$SQL = "SELECT searchid FROM searches WHERE searchid = '".$_REQUEST["searchid"]."'";
+$res = mysql_query($SQL) or die(mysql_error());; 
+$row = mysql_fetch_array($res);
+if ($row["searchid"] != $_REQUEST["searchid"]) die();
 
 switch ($_REQUEST["operation"]) {
     case "getid":
         $id = uniqid();
         echo "ID:".$id;
-        mkdir("uploads/".$id."/", 0777);
+	    $SQL = "INSERT INTO users (id, user_name, searchid) VALUES ('".$id."', '".$_REQUEST["user_name"]."', '".$_REQUEST["searchid"]."')";
+	    mysql_query($SQL) or die(mysql_error()); 
+        mkdir("/var/local/patrac/".$id."/", 0777);
         break;
     case "sendlocation":
-        $SQL = "INSERT INTO locations (id, lat, lon) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"].")";
+        $SQL = "INSERT INTO locations (id, lat, lon, searchid) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"]."', '".$_REQUEST["searchid"]."')";
         mysql_query($SQL) or die(mysql_error());; 
         echo "OK ".$SQL;
         break;
     case "getlocations":
         $SQL = "SELECT DISTINCT id FROM locations";
-        $res = mysql_query($SQL) or die(mysql_error());; 
+        $res = mysql_query($SQL) or die(mysql_error());
         while ($row = mysql_fetch_array($res)) { 
             $SQL2 = "SELECT id, lat, lon FROM locations WHERE id = '".$row["id"]."' ORDER BY dt_created DESC LIMIT 1";
             $res2 = mysql_query($SQL2) or die(mysql_error());; 
@@ -57,7 +67,7 @@ switch ($_REQUEST["operation"]) {
         break;
     case "getmessages":
         $SQL = "SELECT * FROM messages WHERE id = '".$_REQUEST["id"]."'";
-        $res = mysql_query($SQL) or die(mysql_error());; 
+        $res = mysql_query($SQL) or die(mysql_error()); 
         while ($row = mysql_fetch_array($res)) { 
             echo "M;".$row["id"].";".$row["message"].";".$row["file"].";".$row["dt_created"]."\n";
         }
@@ -65,9 +75,24 @@ switch ($_REQUEST["operation"]) {
     case "insertmessage":
         echo "UPLOADING";
         $filename = uploadFile($_REQUEST["id"]);
-        $SQL = "INSERT INTO messages (id, message, file) VALUES ('".$_REQUEST["id"]."', '".$_REQUEST["message"]."', '".$filename."')";
-        mysql_query($SQL) or die(mysql_error());; 
+        $SQL = "INSERT INTO messages (id, message, file, searchid) VALUES ('".$_REQUEST["id"]."', '".$_REQUEST["message"]."', '".$filename."', '".$_REQUEST["searchid"]."'')";
+        mysql_query($SQL) or die(mysql_error());
         echo "OK ".$SQL;
+        break;
+    case "getfile":
+        $attachment_location = "/var/local/patrac/".$_REQUEST["id"]."/".$_REQUEST["filename"];
+        if (file_exists($attachment_location)) {
+            header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
+            header("Cache-Control: public"); // needed for internet explorer
+            header("Content-Type: application/octet-stream");
+            header("Content-Transfer-Encoding: Binary");
+            header("Content-Length:".filesize($attachment_location));
+            header("Content-Disposition: attachment; filename=filePath");
+            readfile($attachment_location);
+            die();
+        } else {
+            die("Error: File not found.");
+        }
         break;
 }
 
