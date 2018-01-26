@@ -1,6 +1,10 @@
 <?php
 
 function uploadFile($id) {
+
+
+if (!isset($_FILES["fileToUpload"])) return "";
+
 $target_dir = "/var/local/patrac/".$id."/";
 $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
 $uploadOk = 1;
@@ -9,17 +13,20 @@ $uploadOk = 1;
 if (file_exists($target_file)) {
     echo "Sorry, file already exists.";
     $uploadOk = 0;
+    return '';
 }
 // Check file size
 if ($_FILES["fileToUpload"]["size"] > 1000000) {
     echo "Sorry, your file is too large.";
     $uploadOk = 0;
+    return '';
 }
 
 // Check if $uploadOk is set to 0 by an error
 if ($uploadOk == 0) {
     echo "Sorry, your file was not uploaded.";
-// if everything is ok, try to upload file
+    // if everything is ok, try to upload file
+    return '';
 } else {
     if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
         echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
@@ -31,6 +38,8 @@ if ($uploadOk == 0) {
 }
 }
 
+
+//echo "OK";
 
 mysql_connect("127.0.0.1", "*", "*") or die(mysql_error());;
 mysql_select_db("patrac") or die(mysql_error());
@@ -51,7 +60,7 @@ switch ($_REQUEST["operation"]) {
         mkdir("/var/local/patrac/".$id."/", 0777);
         break;
     case "sendlocation":
-        $SQL = "INSERT INTO locations (id, lat, lon, searchid) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"]."', '".$_REQUEST["searchid"]."')";
+        $SQL = "INSERT INTO locations (id, lat, lon, searchid) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"].", '".$_REQUEST["searchid"]."')";
         mysql_query($SQL) or die(mysql_error());; 
         echo "OK ".$SQL;
         break;
@@ -66,16 +75,20 @@ switch ($_REQUEST["operation"]) {
         }
         break;
     case "getmessages":
-        $SQL = "SELECT * FROM messages WHERE id = '".$_REQUEST["id"]."'";
+        //LIMIT 1 aby odešla v jednom požadavku vždy jen jedna zpráva
+        $SQL = "SELECT * FROM messages WHERE id = '".$_REQUEST["id"]."' and readed <> 1 LIMIT 1";
         $res = mysql_query($SQL) or die(mysql_error()); 
         while ($row = mysql_fetch_array($res)) { 
             echo "M;".$row["id"].";".$row["message"].";".$row["file"].";".$row["dt_created"]."\n";
+            $SQL = "UPDATE messages SET readed = 1 WHERE sysid = ".$row["sysid"];
+            mysql_query($SQL) or die(mysql_error()); 
         }
         break;
     case "insertmessage":
         echo "UPLOADING";
         $filename = uploadFile($_REQUEST["id"]);
-        $SQL = "INSERT INTO messages (id, message, file, searchid) VALUES ('".$_REQUEST["id"]."', '".$_REQUEST["message"]."', '".$filename."', '".$_REQUEST["searchid"]."'')";
+        if ($filename == '') echo "NO FILE PROVIDED";
+        $SQL = "INSERT INTO messages (id, message, file, searchid) VALUES ('".$_REQUEST["id"]."', '".$_REQUEST["message"]."', '".$filename."', '".$_REQUEST["searchid"]."')";
         mysql_query($SQL) or die(mysql_error());
         echo "OK ".$SQL;
         break;
@@ -87,7 +100,7 @@ switch ($_REQUEST["operation"]) {
             header("Content-Type: application/octet-stream");
             header("Content-Transfer-Encoding: Binary");
             header("Content-Length:".filesize($attachment_location));
-            header("Content-Disposition: attachment; filename=filePath");
+            header("Content-Disposition: attachment; filename=".$_REQUEST["filename"]);
             readfile($attachment_location);
             die();
         } else {
@@ -97,4 +110,28 @@ switch ($_REQUEST["operation"]) {
 }
 
 mysql_close();
+
+/*
+http://gisak.vsb.cz/patrac/mserver.php?operation=sendlocation&searchid=AAA111BBB&id=5a6715f7a244c&lat=10&lon=20
+
+curl --form name=myfileparam --form file=@/home/jencek/test.gpx -Fjson='{'message': message, 'id': id, 'operation': 'insertmessage', 'searchid': 'AAA111BBB', 'fileToUpload', 'file'}' -Fsubmit=Build http://gisak.vsb.cz/patrac/mserver.php
+
+
+curl --form name=myfileparam --form file=@/home/jencek/test.gpx -Fjson='{"parameter": {'message': message, 'id': id, 'operation': 'insertmessage', 'searchid': 'AAA111BBB', 'fileToUpload', 'file'}}' -Fsubmit=Build http://gisak.vsb.cz/patrac/mserver.php
+
+data = json.dumps({'message': message, 'id': id, 'operation': 'insertmessage', 'searchid': 'AAA111BBB'})
+        with open(filename1, 'rb') as f: r = requests.post('http://gisak.vsb.cz/patrac/mserver.php', data = {'message': message, 'id': id, 'operation': 'insertmessage'}, files={'fileToUpload': f})
+        print r.text
+
+
+-Fjson='{"parameter": {"name": "myfileparam", "file": "file"}}'
+
+curl -X POST -F 'image=@/path/to/pictures/picture.jpg' http://domain.tld/upload
+curl -X POST -d "searchid=AAA111BBB&operation=insertmessage&id=5a671dc761847&message=AAA" http://gisak.vsb.cz/patrac/mserver.php
+curl -X POST -F 'searchid=AAA111BBB&operation=insertmessage&id=5a671dc761847&message=AAA&fileToUpload=@/home/jencek/test.gpx' http://gisak.vsb.cz/patrac/mserver.php
+
+curl --form searchid=AAA111BBB --form operation=insertmessage --form id=5a671dc761847 --form message=AAA --form fileToUpload=@/home/jencek/test.gpx http://gisak.vsb.cz/patrac/mserver.php
+
+*/
+
 ?>
