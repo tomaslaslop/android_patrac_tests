@@ -70,7 +70,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     private ListView messagesListView;
     String testX = "";
     String sessionId = null;
-    String searchid = "AAA111BBB";
+    String searchid = "*";
     double lat = 0;
     double lon = 0;
     int positionCount = 0;
@@ -105,7 +105,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         setContentView(R.layout.sample_main);
         mDataText = (TextView) findViewById(R.id.data_text);
         messagesListView = (ListView) findViewById(R.id.messagesListView);
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://158.196.143.122/patrac/mserver.php?operation=getid");
+        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://gisak.vsb.cz/patrac/mserver.php?operation=getid");
         context = this.getApplicationContext();
 
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -210,7 +210,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
             if (sessionId == null) {
                 String user_name = sharedPrefs.getString("user_name", "NN");
                 try {
-                    mNetworkFragment.startDownload("http://158.196.143.122/patrac/mserver.php?operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8"));
+                    mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8"));
                     mDownloading = true;
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -219,7 +219,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
                 if (Math.hypot(lat - newlat, lon - newlon) > 0.0001) {
                     lat = newlat;
                     lon = newlon;
-                    mNetworkFragment.startDownload("http://158.196.143.122/patrac/mserver.php?operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + lat + "&lon=" + lon);
+                    mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + lat + "&lon=" + lon);
                     mDownloading = true;
                 }
 
@@ -236,10 +236,10 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
             // Execute the async download.
             if (sessionId == null) {
                 //TODO ověřit zda tato situace může nastat
-                mNetworkFragment.startDownload("http://158.196.143.122/patrac/mserver.php?operation=getid");
+                mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getid");
                 mDownloading = true;
             } else {
-                mNetworkFragment.startDownload("http://158.196.143.122/patrac/mserver.php?operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
+                mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
                 mDownloading = true;
             }
         }
@@ -265,10 +265,14 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
                 //mDataText.setText(mDataText.getText() + items[4].substring(0, items[4].length() - 1) + " Soubor: " + items[3] + "\n");
                 MessageFile mf = new MessageFile("Kdy: " + items[4].substring(0, items[4].length() - 1) + "\nZpráva: " + items[2], items[3]);
                 messages_list_full.add(mf);
-                messages_list.add(items[4].substring(0, items[4].length() - 1) + ": " + items[2] + " (@)");
+                if (items[3].length() > 1) {
+                    messages_list.add(items[4].substring(0, items[4].length() - 1) + ": " + items[2] + " (@)");
+                } else {
+                    messages_list.add(items[4].substring(0, items[4].length() - 1) + ": " + items[2]);
+                }
                 //messages_list.add(items[4].substring(0, items[4].length() - 1) + " Soubor: " + items[3]);
                 arrayAdapter.notifyDataSetChanged();
-                new DownloadFileFromURL().execute("http://158.196.143.122/patrac/mserver.php?operation=getfile&searchid=" + searchid + "&id=" + sessionId + "&filename=" + items[3]);
+                new DownloadFileFromURL().execute("http://gisak.vsb.cz/patrac/mserver.php?operation=getfile&searchid=" + searchid + "&id=" + sessionId + "&filename=" + items[3]);
             } else {
                 String replaceFrom = "Počet odeslaných pozic: " + positionCount;
                 positionCount++;
