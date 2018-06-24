@@ -2,67 +2,46 @@
 
 function uploadFile($id) {
 
-    if (!isset($_FILES["fileToUpload"])) return "";
 
-    $target_dir = "/var/local/patrac/".$id."/";
-    $target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-    $uploadOk = 1;
+if (!isset($_FILES["fileToUpload"])) return "";
 
-    // Check if file already exists
-    if (file_exists($target_file)) {
-        echo "Sorry, file already exists.";
-        $uploadOk = 0;
-        return '';
-    }
-    
-    // Check file size
-    if ($_FILES["fileToUpload"]["size"] > 1000000) {
-        echo "Sorry, your file is too large.";
-        $uploadOk = 0;
-        return '';
-    }
+$target_dir = "/var/local/patrac/".$id."/";
+$target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
+$uploadOk = 1;
 
-    // Check if $uploadOk is set to 0 by an error
-    if ($uploadOk == 0) {
-        echo "Sorry, your file was not uploaded.";
-        // if everything is ok, try to upload file
-        return '';
-    } else {
-        if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-            echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
-            return basename( $_FILES["fileToUpload"]["name"]);
-        } else {
-            echo "Sorry, there was an error uploading your file.";
-            return "";
-        }
-    }
+// Check if file already exists
+if (file_exists($target_file)) {
+    echo "Sorry, file already exists.";
+    $uploadOk = 0;
+    return '';
+}
+// Check file size
+if ($_FILES["fileToUpload"]["size"] > 1000000) {
+    echo "Sorry, your file is too large.";
+    $uploadOk = 0;
+    return '';
 }
 
-function stripMessage($message) {
-    return preg_replace('/[^A-ZĚŠČŘŽÝÁÍÉÚŮĎŤa-zěščřžýáíéúůďť0-9\-\.\ ]/', '_', $message);
+// Check if $uploadOk is set to 0 by an error
+if ($uploadOk == 0) {
+    echo "Sorry, your file was not uploaded.";
+    // if everything is ok, try to upload file
+    return '';
+} else {
+    if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
+        echo "The file ". basename( $_FILES["fileToUpload"]["name"]). " has been uploaded.";
+        return basename( $_FILES["fileToUpload"]["name"]);
+    } else {
+        echo "Sorry, there was an error uploading your file.";
+        return "";
+    }
+}
 }
 
 function insertMessage($id, $message, $filename, $searchid, $shared, $from_id) {
-    if (ctype_alnum($id) && ctype_alnum($from_id)) {
-        if (strlen($message) > 255) $message = substr($message, 255);
-        $SQL = "INSERT INTO messages (id, message, file, searchid, shared, from_id) VALUES ('".$id."', '".stripMessage($message)."', '".$filename."', '".$searchid."', ".$shared.", '".$from_id."')";
+        $SQL = "INSERT INTO messages (id, message, file, searchid, shared, from_id) VALUES ('".$id."', '".$message."', '".$filename."', '".$searchid."', ".$shared.", '".$from_id."')";
         mysql_query($SQL) or die($SQL." ".mysql_error());
         echo "OK ".$SQL;
-    } else {
-        echo "ERROR (incorrect input): ".$id." ".$from_id;
-    }
-}
-
-function checkLatLon($lat, $lon) {
-    if ($lat != "" && $lon != "") {
-        if (is_numeric($lat) && is_numeric($lon)) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
 }
 
 //file_put_contents("/tmp/mserver_debug.txt", file_get_contents("php://input"));
@@ -73,13 +52,10 @@ mysql_select_db("patrac") or die(mysql_error());
 
 if (!isset($_REQUEST["searchid"])) die();
 if ($_REQUEST["searchid"] == '') die();
-if (!ctype_alnum($_REQUEST["searchid"])) die();
 $SQL = "SELECT searchid FROM searches WHERE searchid = '".$_REQUEST["searchid"]."'";
 $res = mysql_query($SQL) or die(mysql_error());; 
 $row = mysql_fetch_array($res);
-if ($row["searchid"] != $_REQUEST["searchid"]) {
-   $SQL = "INSERT INTO searches (searchid) VALUES ('".$_REQUEST["searchid"]."')";
-}
+if ($row["searchid"] != $_REQUEST["searchid"]) die();
 
 switch ($_REQUEST["operation"]) {
     case "getid":
@@ -87,7 +63,8 @@ switch ($_REQUEST["operation"]) {
         echo "ID:".$id;
 	    $SQL = "INSERT INTO users (id, user_name, searchid) VALUES ('".$id."', '".$_REQUEST["user_name"]."', '".$_REQUEST["searchid"]."')";
 	    mysql_query($SQL) or die(mysql_error());
-        if (checkLatLon($_REQUEST["lat"], $_REQUEST["lon"])) {
+        if ($_REQUEST["lat"] == "" || $_REQUEST["lon"] == "") {
+        } else {  
             $SQL = "INSERT INTO locations (id, lat, lon, searchid, dt_created) VALUES ('".$id."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"].", '".$_REQUEST["searchid"]."', utc_timestamp())";
             mysql_query($SQL) or die(mysql_error());
         }
@@ -95,33 +72,23 @@ switch ($_REQUEST["operation"]) {
         break;
     
     case "sendlocation":
-        if (checkLatLon($_REQUEST["lat"], $_REQUEST["lon"])) {
-            $SQL = "INSERT INTO locations (id, lat, lon, searchid, dt_created) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"].", '".$_REQUEST["searchid"]."', utc_timestamp())";
-            mysql_query($SQL) or die(mysql_error());; 
-            echo "Positions saved:1";
-        } else {
-            echo "ERROR (incorrect input):".$_REQUEST["lat"]." ".$_REQUEST["lon"]; 
-        }
+        $SQL = "INSERT INTO locations (id, lat, lon, searchid, dt_created) VALUES ('".$_REQUEST["id"]."', ".$_REQUEST["lat"].", ".$_REQUEST["lon"].", '".$_REQUEST["searchid"]."', utc_timestamp())";
+        mysql_query($SQL) or die(mysql_error());; 
+        echo "Positions saved:1";
         break;
 
     case "sendlocations":
         $coordsString = $_REQUEST["coords"];
         $coords = explode(",", $coordsString);
         $count = 0;
-        $errorCount = 0;
         foreach($coords as $coord) {
             $coordString = trim($coord);
             $coord = explode(";", $coordString);
-            if (checkLatLon($coord[0], $coord[1])) {
-                $SQL = "INSERT INTO locations (id, lon, lat, searchid, dt_created) VALUES ('".$_REQUEST["id"]."', ".$coord[0].", ".$coord[1].", '".$_REQUEST["searchid"]."', utc_timestamp())";
-                mysql_query($SQL) or die(mysql_error()." ".$SQL);
-                $count++; 
-            } else {
-                $errorCount++;
-            }
+            $SQL = "INSERT INTO locations (id, lon, lat, searchid, dt_created) VALUES ('".$_REQUEST["id"]."', ".$coord[0].", ".$coord[1].", '".$_REQUEST["searchid"]."', utc_timestamp())";
+            mysql_query($SQL) or die(mysql_error()." ".$SQL);
+            $count++; 
         }
         echo "Positions saved:".$count;
-        echo "Positions not saved (incorrect input):".$errorCount;
         break;
 
     case "getlocations":
@@ -129,15 +96,12 @@ switch ($_REQUEST["operation"]) {
         $res = mysql_query($SQL) or die(mysql_error());
         while ($row = mysql_fetch_array($res)) { 
             $SQL2 = "SELECT id, lat, lon, dt_created FROM locations WHERE id = '".$row["id"]."' ORDER BY dt_created DESC LIMIT 1";
-            $res2 = mysql_query($SQL2) or die(mysql_error());
+            $res2 = mysql_query($SQL2) or die(mysql_error());; 
             $row2 = mysql_fetch_array($res2);
             $SQL3 = "SELECT user_name FROM users WHERE id = '".$row["id"]."'";
-            $res3 = mysql_query($SQL3) or die(mysql_error());
+            $res3 = mysql_query($SQL3) or die(mysql_error());; 
             $row3 = mysql_fetch_array($res3);
-            #$diff = strtotime(date('Y-m-d H:i:s')) - strtotime($row2["dt_created"]);
-            $timestamp = time()+date("Z");
-            $utc_timestamp = gmdate("Y/m/d H:i:s",$timestamp);
-            $diff =  strtotime($utc_timestamp) - strtotime($row2["dt_created"]);
+            $diff = strtotime(date('Y-m-d H:i:s')) - strtotime($row2["dt_created"]);
             if ($diff > 300) {
                echo $row["id"].";".$row2["dt_created"].";D;".$row3["user_name"].";".$row2["lon"]." ".$row2["lat"].";".$diff."\n"; 
             } else {
@@ -247,16 +211,16 @@ switch ($_REQUEST["operation"]) {
         break;
 
     case "insertmessage":
-        $from_id = "NN" + uniqid();
-        if (isset($_REQUEST["from_id"])) $from_id = $_REQUEST["from_id"];
+        $from_id = $_REQUEST["from_id"];
+        if ($from_id == "") $from_id = "NN" + uniqid();
         $filename = uploadFile($_REQUEST["id"]);
         if ($filename == '') echo "NO FILE PROVIDED ";
         insertMessage($_REQUEST["id"], $_REQUEST["message"], $filename, $_REQUEST["searchid"], 0, $from_id);
         break;
 
     case "insertmessages":
-        $from_id = "NN" + uniqid();
-        if (isset($_REQUEST["from_id"])) $from_id = $_REQUEST["from_id"];
+        $from_id = $_REQUEST["from_id"];
+        if ($from_id == "") $from_id = "NN" + uniqid();
         if (strpos($_REQUEST["ids"], ';') !== false) {
             echo "UPLOADING ";
             $filename = uploadFile("shared");

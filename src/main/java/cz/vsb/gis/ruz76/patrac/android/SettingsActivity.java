@@ -110,10 +110,18 @@ public class SettingsActivity extends PreferenceActivity {
 
         // Trigger the listener immediately with the preference's
         // current value.
-        sBindPreferenceSummaryToValueListener.onPreferenceChange(preference,
-                PreferenceManager
-                        .getDefaultSharedPreferences(preference.getContext())
-                        .getString(preference.getKey(), ""));
+        switch (preference.getKey()) {
+            case "user_name":
+                sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
+                break;
+            case "messages_switch":
+                sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getBoolean(preference.getKey(), true));
+                break;
+            default:
+                sBindPreferenceSummaryToValueListener.onPreferenceChange(preference, PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
+                break;
+        }
+
     }
 
     @Override
@@ -161,6 +169,15 @@ public class SettingsActivity extends PreferenceActivity {
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            finish();
+        }
+        return true;
+    }
+
     /**
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.
@@ -178,7 +195,8 @@ public class SettingsActivity extends PreferenceActivity {
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(findPreference("user_name"));
-            bindPreferenceSummaryToValue(findPreference("example_list"));
+            bindPreferenceSummaryToValue(findPreference("messages_switch"));
+            //bindPreferenceSummaryToValue(findPreference("example_list"));
         }
 
         @Override
@@ -239,6 +257,7 @@ public class SettingsActivity extends PreferenceActivity {
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(findPreference("sync_frequency"));
+            bindPreferenceSummaryToValue(findPreference("sync_frequency_gps"));
         }
 
         @Override

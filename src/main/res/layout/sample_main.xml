@@ -18,6 +18,7 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent">
@@ -26,7 +27,10 @@
         android:id="@+id/intro_text"
         android:layout_width="match_parent"
         android:layout_height="134dp"
+        android:layout_margin="@dimen/cardview_default_elevation"
         android:freezesText="true"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
         android:text="@string/welcome_message"
         android:textSize="14sp" />
 
@@ -34,7 +38,8 @@
         android:id="@+id/messagesListView"
         style="@style/Widget.AppCompat.ListView"
         android:layout_width="match_parent"
-        android:layout_height="289dp"
+        android:layout_height="233dp"
+        android:layout_margin="@dimen/cardview_default_elevation"
         android:textSize="12sp" />
 
     <View
@@ -44,8 +49,27 @@
 
     <TextView
         android:id="@+id/data_text"
+        android:layout_width="384dp"
+        android:layout_height="84dp"
+        android:layout_margin="@dimen/cardview_default_elevation"
+        android:maxLines="4"
+        android:minLines="4"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:scrollHorizontally="false"
+        android:scrollbarAlwaysDrawHorizontalTrack="true"
+        android:scrollbars="horizontal"
+        android:selectAllOnFocus="false" />
+
+    <TextView
+        android:id="@+id/status_text"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="97dp"
+        android:layout_margin="@dimen/cardview_default_elevation"
         android:freezesText="true"
+        android:minLines="2"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:scrollbars="horizontal"
         android:textSize="14sp" />
 </LinearLayout>
