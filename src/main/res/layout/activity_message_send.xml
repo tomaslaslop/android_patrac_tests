@@ -6,28 +6,18 @@
     android:layout_height="match_parent"
     tools:context="cz.vsb.gis.ruz76.patrac.android.MessageSend">
 
-    <ListView
-        android:id="@+id/messagesSentListView"
-        style="@style/Widget.AppCompat.ListView"
-        android:layout_width="match_parent"
-        android:layout_height="367dp"
-        android:layout_margin="@dimen/cardview_default_elevation"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="100dp"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/messageTextSend" />
-
     <EditText
         android:id="@+id/messageTextSend"
-        android:layout_width="357dp"
-        android:layout_height="121dp"
+        android:layout_width="362dp"
+        android:layout_height="206dp"
         android:ems="10"
         android:inputType="textCapSentences|textMultiLine"
         android:maxLength="200"
+        android:padding="5dp"
         android:paddingLeft="5dp"
         android:paddingRight="5dp"
         android:singleLine="false"
+        android:gravity="left|top"
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="16dp" />
 </android.support.constraint.ConstraintLayout>

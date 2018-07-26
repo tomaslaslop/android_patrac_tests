@@ -2,14 +2,20 @@ package cz.vsb.gis.ruz76.patrac.android;
 
 
 import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -19,6 +25,8 @@ import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -34,6 +42,9 @@ import java.util.List;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends PreferenceActivity {
+
+    static final String ACTION_SCAN = "com.google.zxing.client.android.SCAN";
+
     /**
      * A preference value change listener that updates the preference's summary
      * to reflect its new value.
@@ -130,6 +141,7 @@ public class SettingsActivity extends PreferenceActivity {
         setupActionBar();
     }
 
+
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
      */
@@ -196,6 +208,7 @@ public class SettingsActivity extends PreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference("user_name"));
             bindPreferenceSummaryToValue(findPreference("messages_switch"));
+            setupScan();
             //bindPreferenceSummaryToValue(findPreference("example_list"));
         }
 
@@ -207,6 +220,68 @@ public class SettingsActivity extends PreferenceActivity {
                 return true;
             }
             return super.onOptionsItemSelected(item);
+        }
+
+        private void setupScan() {
+            Preference button = findPreference(getString(R.string.pref_scan_searchid));
+            button.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    scanQR();
+                    return true;
+                }
+            });
+        }
+        private void scanQR() {
+            try {
+                Intent intent = new Intent(ACTION_SCAN);
+                intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+                startActivityForResult(intent, 0);
+            } catch (ActivityNotFoundException anfe) {
+                showDialog(getActivity(), getString(R.string.pref_scanner_not_found), getString(R.string.pref_scanner_not_found_download), getString(R.string.pref_scanner_not_found_download_yes), getString(R.string.pref_scanner_not_found_download_no)).show();
+            }
+        }
+
+        private static AlertDialog showDialog(final Activity act, CharSequence title, CharSequence message, CharSequence buttonYes, CharSequence buttonNo) {
+            AlertDialog.Builder downloadDialog = new AlertDialog.Builder(act);
+            downloadDialog.setTitle(title);
+            downloadDialog.setMessage(message);
+            downloadDialog.setPositiveButton(buttonYes, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Uri uri = Uri.parse("market://search?q=pname:" + "com.google.zxing.client.android");
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    try {
+                        act.startActivity(intent);
+                    } catch (ActivityNotFoundException anfe) {
+
+                    }
+                }
+            });
+            downloadDialog.setNegativeButton(buttonNo, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            });
+            return downloadDialog.show();
+        }
+
+        public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+            if (requestCode == 0) {
+                if (resultCode == RESULT_OK) {
+                    String contents = intent.getStringExtra("SCAN_RESULT");
+                    String format = intent.getStringExtra("SCAN_RESULT_FORMAT");
+
+                    Toast toast = Toast.makeText(getActivity(), R.string.pref_scanner_identifier + ":" + contents + " " + R.string.pref_scanner_format + ":" + format, Toast.LENGTH_LONG);
+                    toast.show();
+
+                    SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+                    SharedPreferences.Editor editor = sharedPrefs.edit();
+                    editor.putString("searchid", contents);
+                    editor.commit();
+
+                    EditTextPreference editTextPreferenceSearchId = (EditTextPreference) findPreference("searchid");
+                    editTextPreferenceSearchId.setText(contents);
+                }
+            }
         }
     }
 

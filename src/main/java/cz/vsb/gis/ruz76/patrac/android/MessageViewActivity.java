@@ -39,7 +39,11 @@ public class MessageViewActivity extends Activity {
         TextView txtView = (TextView) findViewById(R.id.messageTextView);
         String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).toString();
         path = path + "/" + filename;
-        txtView.setText(message + "\nNázev přílohy: " + filename + "\nUmístění: " + path);
+        if (filename == null || filename.isEmpty()) {
+            txtView.setText(message);
+        } else {
+            txtView.setText(message + "\n" + getString(R.string.message_attachment) + ": " + filename + "\n" + getString(R.string.message_attachment_placement) + ": " + path);
+        }
         setupActionBar();
     }
 
@@ -80,6 +84,7 @@ public class MessageViewActivity extends Activity {
         return false;
     }
 
+    //TODO do it better, probably other types can be sent as well
     private String getType(String filename) {
         String parts[] = filename.split("\\.");
         String extension = parts[parts.length - 1];

@@ -16,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,22 +36,23 @@ import java.util.List;
 
 public class MessageSend extends FragmentActivity {
 
-    private List<String> messages_list;
+    /*private List<String> messages_list;
     private List<MessageFile> messages_list_full;
     // Create an ArrayAdapter from List
     private ArrayAdapter<String> arrayAdapter;
     private ListView messagesListView;
-
+   */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
         setContentView(R.layout.activity_message_send);
-        String[] messages = new String[] { "Seznam odeslaných zpráv" };
+        /*
+        String[] messages = new String[] { getString(R.string.sent_messages_list_title) };
         messages_list = new ArrayList<String>(Arrays.asList(messages));
 
-        MessageFile mf = new MessageFile("Seznam odeslaných zpráv", null);
+        MessageFile mf = new MessageFile(getString(R.string.sent_messages_list_title), null);
         messages_list_full = new ArrayList<MessageFile>();
         messages_list_full.add(mf);
 
@@ -61,6 +63,7 @@ public class MessageSend extends FragmentActivity {
         // DataBind ListView with items from ArrayAdapter
         messagesListView.setAdapter(arrayAdapter);
 
+        */
         setupActionBar();
     }
 
@@ -92,14 +95,20 @@ public class MessageSend extends FragmentActivity {
                 String message = messageTextSend.getText().toString();
                 try {
                     message = URLEncoder.encode(message, "UTF-8");
+                    /*
                     Date dateSent = new Date();
-                    MessageFile mf = new MessageFile("Kdy: " + dateSent + "\nZpráva: " + message, null);
+                    MessageFile mf = new MessageFile(R.string.message_when + ": " + dateSent + "\n" + R.string.message + ": " + message, null);
                     messages_list_full.add(0, mf);
                     SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm");
                     messages_list.add(0, dateFormat.format(dateSent) + ": " + message);
                     new AdapterHelper().update((ArrayAdapter) arrayAdapter, new ArrayList<Object>(messages_list));
                     arrayAdapter.notifyDataSetChanged();
-                    new SendMessageToURL().execute("http://gisak.vsb.cz/patrac/mserver.php?operation=insertmessage&searchid=" + MainActivity.searchid + "&from_id=" + MainActivity.sessionId + "&message=" + message + "&id=coordinator" + MainActivity.searchid);
+                    */
+
+                    Toast toast = Toast.makeText(this, getString(R.string.message) + " \"" + message + "\" " + getString(R.string.message_was_sent), Toast.LENGTH_LONG);
+                    toast.show();
+
+                    new SendMessageToURL().execute(R.string.pref_default_endpoint + "operation=insertmessage&searchid=" + MainActivity.searchid + "&from_id=" + MainActivity.sessionId + "&message=" + message + "&id=coordinator" + MainActivity.searchid);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
@@ -108,9 +117,8 @@ public class MessageSend extends FragmentActivity {
         return false;
     }
 
-
     /**
-     * Background Async Task to download file
+     * Background Async Task to send the message file
      * */
     class SendMessageToURL extends AsyncTask<String, String, String> {
 
@@ -131,13 +139,11 @@ public class MessageSend extends FragmentActivity {
         protected String doInBackground(String... f_url) {
             int count;
             String f_url_parts[] = f_url[0].split("/");
-            //String filename = f_url[1];
             try {
                 URL url = new URL(f_url[0]);
                 URLConnection conection = url.openConnection();
                 conection.connect();
-                int lengthOfFile = conection.getContentLength();
-
+                //TODO check output - maybe
 
             } catch (Exception e) {
                 cancel(true);
@@ -145,7 +151,5 @@ public class MessageSend extends FragmentActivity {
 
             return null;
         }
-
-
     }
 }

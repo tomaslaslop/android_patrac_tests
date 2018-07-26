@@ -19,7 +19,7 @@ package cz.vsb.gis.ruz76.patrac.android;
 import android.net.NetworkInfo;
 
 /**
- * Sample interface containing bare minimum methods needed for an asynchronous task
+ * Interface containing bare minimum methods needed for an asynchronous task
  * to update the UI Context.
  */
 

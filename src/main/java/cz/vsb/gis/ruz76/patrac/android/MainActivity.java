@@ -30,15 +30,12 @@ import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -47,48 +44,29 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.math.RoundingMode;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Sample Activity demonstrating how to connect to the network and fetch raw
- * HTML. It uses a Fragment that encapsulates the network operations on an AsyncTask.
- * <p>
- * This sample uses a TextView to display output.
+ * Main Activity.
  */
 public class MainActivity extends FragmentActivity implements DownloadCallback, LocationListener {
-
-    // Reference to the TextView showing fetched data, so we can clear it with a button
-    // as necessary.
-    public static String MM = null;
+    public static String StatusMessages = null;
     public static ArrayList<Waypoint> waypoints;
     private TextView mDataText;
     private TextView mStatusText;
     private ListView messagesListView;
-    String testX = "";
     public static String sessionId = null;
-    //Zatim hardcoded - později z nastaveni
-    public static String searchid = "AAA111BBB";
+    public static String searchid;
+    public static String endPoint;
     double lat = 0;
     double lon = 0;
     int positionCount = 0;
@@ -99,8 +77,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     boolean connected = false;
 
     int lastLoggedPositionId = 0;
-    int lastSendedPositionId = 0;
-    //PrintStream local_gpx_fragment = null;
 
     Timer timerPosition;
     PositionTask myPositionTask;
@@ -108,8 +84,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     MessageTask myMessageTask;
     SharedPreferences sharedPrefs;
 
-    // Keep a reference to the NetworkFragment which owns the AsyncTask object
-    // that is used to execute network ops.
     private NetworkFragment mNetworkFragment;
 
     // Boolean telling us whether a download is in progress, so we don't trigger overlapping
@@ -127,6 +101,76 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
 
     LocationManager locationManager;
 
+    //Methods from Location Listener
+    @Override
+    public void onLocationChanged(Location location) {}
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+    @Override
+    public void onProviderEnabled(String provider) {}
+
+    @Override
+    public void onProviderDisabled(String provider) {}
+
+    /**
+     * Creates instances from saved state.
+     * Sets permissions or requests permissions.
+     * Sets gui based on layout activity_main.
+     * @param savedInstanceState
+     */
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setPermissions();
+        setContentView(R.layout.activity_main);
+    }
+
+    /**
+     * Ads items to the menu.
+     * @param menu
+     * @return
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    /**
+     * Invoked on menu click.
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.connect_disconnect_action:
+                if (!connected) {
+                    connect();
+                    item.setTitle(getString(R.string.disconnect));
+                } else {
+                    disconnect();
+                    item.setTitle(getString(R.string.connect));
+                }
+                return true;
+            case R.id.clear_action:
+                return startActivity(MainActivity.this, SettingsActivity.class);
+
+            case R.id.map_action:
+                return startActivity(MainActivity.this, MapsActivity.class);
+
+            case R.id.send_message_action:
+                return startActivity(MainActivity.this, MessageSend.class);
+
+        }
+        return false;
+    }
+
+    /**
+     * Sets or requests permissions for the application.
+     */
     private void setPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
@@ -139,22 +183,39 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         }
     }
 
-    private void setItems() {
+    /**
+     * Resets items to empty or zero values.
+     */
+    private void resetItems() {
+
+        lat = 0;
+        lon = 0;
+        positionCount = 0;
+        loggedPositionCount = 0;
+        sendPositionCount = 0;
+        messagesCount = 0;
+        errorsCount = 0;
+
+        sessionId = null;
+
+        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+
         mDataText = (TextView) findViewById(R.id.data_text);
         mStatusText = (TextView) findViewById(R.id.status_text);
         messagesListView = (ListView) findViewById(R.id.messagesListView);
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://gisak.vsb.cz/patrac/mserver.php?operation=getid");
+
+        endPoint = sharedPrefs.getString("endpoint", getString(R.string.pref_default_endpoint));
+
+        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), endPoint + "operation=getid");
         context = this.getApplicationContext();
 
         waypoints = new ArrayList<Waypoint>();
+        searchid = sharedPrefs.getString("searchid", getString(R.string.pref_default_searchid));
 
-        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        searchid = sharedPrefs.getString("searchid", "AAA111BBB");
-
-        String[] messages = new String[]{"Seznam zpráv"};
+        String[] messages = new String[]{getString(R.string.messages_list_title)};
         messages_list = new ArrayList<String>(Arrays.asList(messages));
 
-        MessageFile mf = new MessageFile("Seznam zpráv", "Bez přílohy");
+        MessageFile mf = new MessageFile(getString(R.string.messages_list_title), getString(R.string.messages_no_attachment));
         messages_list_full = new ArrayList<MessageFile>();
         messages_list_full.add(mf);
 
@@ -176,22 +237,40 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         });
     }
 
+    /**
+     * It is triggered when the download of the data from Download is finished.
+     * @param result response from the server
+     */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setPermissions();
-        setContentView(R.layout.sample_main);
-        setItems();
+    public void updateFromDownload(String result) {
+        if (result != null) {
+            if (result.startsWith("ID:")) {
+                sendPositionCount++;
+                sessionId = result.substring(3);
+            } else if (result.startsWith("M")) {
+                processMessage(result);
+            } else if (result.startsWith("P")) {
+                sendPositionCount = loggedPositionCount;
+                setInfo();
+            }
+        } else {
+            //The response is empty
+            errorsCount++;
+            DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+            Date date = new Date();
+            mStatusText.setText(getString(R.string.connection_error) + " v " + dateFormat.format(date) + ". Celkem chyb: " + errorsCount);
+            mDownloading = false;
+            setInfo();
+        }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
+    /**
+     * Initialize the connection.
+     */
     private void connect() {
-        //testX = startDownload();
+
+        resetItems();
+
         if (timerPosition != null) {
             timerPosition.cancel();
         }
@@ -213,40 +292,40 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         connected = true;
     }
 
-    private boolean startActivity(Context packageContext, Class<?> appToStart) {
-        Intent appToStartIntent = new Intent(packageContext, appToStart);
-        startActivity(appToStartIntent);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.fetch_action:
-                if (!connected) {
-                    connect();
-                    item.setTitle("Odpojit");
-                } else {
-                    if (timerMessage != null) {
-                        timerMessage.cancel();
-                    }
-                    item.setTitle("Připojit");
-                    connected = false;
-                }
-                return true;
-            case R.id.clear_action:
-                return startActivity(MainActivity.this, SettingsActivity.class);
-
-            case R.id.map_action:
-                return startActivity(MainActivity.this, MapsActivity.class);
-
-            case R.id.send_message_action:
-                return startActivity(MainActivity.this, MessageSend.class);
-
+    /**
+     * Stops timers.
+     */
+    private void disconnect() {
+        connected = false;
+        if (timerPosition != null) {
+            timerPosition.cancel();
         }
-        return false;
+        if (timerMessage != null) {
+            timerMessage.cancel();
+        }
     }
 
+    /**
+     * Requests for session id.
+     */
+    private void getSessionId() {
+        //Maybe put phone number instead of NN and random
+        String user_name = sharedPrefs.getString("user_name", "NN " + Math.round(Math.random() * 10000));
+        try {
+            if (!mDownloading && mNetworkFragment != null) {
+                mNetworkFragment.startDownload(endPoint + "operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
+                mDownloading = true;
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Reads location from system and compares it to the previous position.
+     * @return true if the position should be logged
+     * @throws SecurityException
+     */
     private boolean trackLocation() throws SecurityException {
         double newlat = 0;
         double newlon = 0;
@@ -257,6 +336,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         newlat = locationGPS.getLatitude();
         newlon = locationGPS.getLongitude();
         positionCount++;
+        //TODO do it better
         if (Math.hypot(lat - newlat, lon - newlon) >= 0.0001) { //0.0001
             lat = newlat;
             lon = newlon;
@@ -270,22 +350,12 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         return logit;
     }
 
-    private void getSessionId() {
-        //Maybe put phone number instead of NN and random
-        String user_name = sharedPrefs.getString("user_name", "NN " + Math.round(Math.random() * 10000));
-        try {
-            if (!mDownloading && mNetworkFragment != null) {
-                mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
-                mDownloading = true;
-            }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-    }
-
+    /**
+     * Sends current location or cached 100 locations to the server.
+     */
     private void sendTrack() {
         if ((sendPositionCount == (loggedPositionCount - 1))) {
-            mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
+            mNetworkFragment.startDownload(endPoint + "operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
         } else {
             //Some time out of network. Must send more coords from memory.
             //TODO change to POST to be able send more than 100 coords
@@ -300,27 +370,34 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
                 notSendedCoords += getShortCoord(wp.getLon()) + ";" + getShortCoord(wp.getLat()) + ",";
             }
             notSendedCoords = notSendedCoords.substring(0, notSendedCoords.length() - 2);
-            mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=sendlocations&searchid=" + searchid + "&id=" + sessionId + "&coords=" + notSendedCoords);
+            mNetworkFragment.startDownload(endPoint + "operation=sendlocations&searchid=" + searchid + "&id=" + sessionId + "&coords=" + notSendedCoords);
         }
         mDownloading = true;
     }
 
+    /**
+     * Shows the information that the posision is the same.
+     */
     private void showInfoSamePosition() {
         setInfo();
         String content = String.valueOf(mDataText.getText());
         DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
         Date date = new Date();
-        content += " Pozice je stejná v čase: " + dateFormat.format(date);
+        content += " " + getString(R.string.same_position_label) + ": " + dateFormat.format(date);
         mDataText.setText(content);
     }
 
+    /**
+     * Sends coordinates to the server.
+     * @throws SecurityException
+     */
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void startSync() throws SecurityException {
         boolean logit = trackLocation();
         mDownloading = false;
-        if (MainActivity.MM != null) mStatusText.setText(MainActivity.MM);
+        if (MainActivity.StatusMessages != null) mStatusText.setText(MainActivity.StatusMessages);
         if (!mDownloading && mNetworkFragment != null) {
-            // Execute the async download.
+            // First we have to obtain the sessionId.
             if (sessionId == null) {
                 getSessionId();
             } else {
@@ -335,6 +412,11 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         }
     }
 
+    /**
+     * Flat the coordinate to has just 6 decimal points.
+     * @param coord coordinate to flat
+     * @return flatted coordinate
+     */
     private String getShortCoord(double coord) {
         String coordLong = Double.toString(coord);
         String parts[] = coordLong.split("\\.");
@@ -345,54 +427,76 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         }
     }
 
-    private String startDownloadMessages() {
-        String test = "";
+    /**
+     * Starts downloading a message.
+     */
+    private void startDownloadMessages() {
         if (!mDownloading && mNetworkFragment != null) {
-            // Execute the async download.
+            // we do not have session id yet, so ask for it
             if (sessionId == null) {
-                //TODO ověřit zda tato situace může nastat
-                mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getid&searchid=" + searchid);
+                mNetworkFragment.startDownload(endPoint + "operation=getid&searchid=" + searchid);
                 mDownloading = true;
             } else {
                 boolean messages_switch = sharedPrefs.getBoolean("messages_switch", true);
                 if (messages_switch) {
-                    mNetworkFragment.startDownload("http://gisak.vsb.cz/patrac/mserver.php?operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
+                    mNetworkFragment.startDownload(endPoint + "operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
                     mDownloading = true;
                 }
             }
         }
-
-        return test;
     }
 
+    /**
+     * Shows the information in the status bar.
+     */
     private void setInfo() {
-        String content = "SessionId: " + sessionId + " SearchId: " + searchid + "\n";
-        content += "Pozice získané/logované/odeslané: " + positionCount + "/" + loggedPositionCount + "/" + sendPositionCount + "\n";
-        content += "Longitude: " + (double) Math.round(lon * 100000d) / 100000d + " Latitude: " + (double) Math.round(lat * 100000d) / 100000d + "\n";
+        String content = getString(R.string.sessionid_label) + ": "
+                + sessionId + " "
+                + getString(R.string.searchid_label)
+                + ": " + searchid + "\n";
+        content += getString(R.string.positions_label)
+                + ": " + positionCount
+                + "/" + loggedPositionCount
+                + "/" + sendPositionCount + "\n";
+        content += getString(R.string.longitude_label) + ": "
+                + (double) Math.round(lon * 100000d) / 100000d
+                + " " + getString(R.string.latitude_label) + ": "
+                + (double) Math.round(lat * 100000d) / 100000d + "\n";
         mDataText.setText(content);
     }
 
+    /**
+     * Process the new message. If there is an attachment it is downloaded.
+     * @param result reponse from the server
+     */
     private void processMessage(String result) {
         //New mesage is on the way
         messagesCount++;
         String items[] = result.split(";");
-        MessageFile mf = new MessageFile("Kdy: " + items[4] + "\nZpráva: " + items[2], items[3]);
+        MessageFile mf = new MessageFile(getString(R.string.message_when) + ": " + items[4] + "\n" + getString(R.string.message) + ": " + items[2], items[3]);
         messages_list_full.add(0, mf);
         if (items[3].length() > 1) {
             messages_list.add(0, items[4].substring(0, items[4].length() - 3).split(" ")[1] + ": " + items[2] + " (@)");
             //Shared file
             String shared = items[5].replace("\n", "");
             if (shared.equalsIgnoreCase("1")) {
-                new DownloadFileFromURL().execute("http://gisak.vsb.cz/patrac/mserver.php?operation=getfile&searchid=" + searchid + "&id=shared&filename=" + items[3], items[3]);
-                //Individual file
+                downloadFromUrl(endPoint + "operation=getfile&searchid=" + searchid + "&id=shared&filename=" + items[3], items[3]);
             } else {
-                new DownloadFileFromURL().execute("http://gisak.vsb.cz/patrac/mserver.php?operation=getfile&searchid=" + searchid + "&id=" + sessionId + "&filename=" + items[3], items[3]);
+                //Individual file
+                downloadFromUrl(endPoint + "operation=getfile&searchid=" + searchid + "&id=" + sessionId + "&filename=" + items[3], items[3]);
             }
         } else {
             messages_list.add(0, items[4].substring(0, items[4].length() - 3).split(" ")[1] + ": " + items[2]);
         }
         new AdapterHelper().update((ArrayAdapter) arrayAdapter, new ArrayList<Object>(messages_list));
         arrayAdapter.notifyDataSetChanged();
+        playRing();
+    }
+
+    /**
+     * Plays the ring tone.
+     */
+    private void playRing() {
         try {
             Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
@@ -402,26 +506,15 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         }
     }
 
-    @Override
-    public void updateFromDownload(String result) {
-        if (result != null) {
-            if (result.startsWith("ID:")) {
-                sendPositionCount++;
-                sessionId = result.substring(3);
-            } else if (result.startsWith("M")) {
-                processMessage(result);
-            } else if (result.startsWith("P")) {
-                sendPositionCount = loggedPositionCount;
-                setInfo();
-            }
-        } else {
-            errorsCount++;
-            DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-            Date date = new Date();
-            mStatusText.setText(getString(R.string.connection_error) + " v " + dateFormat.format(date) + ". Celkem chyb: " + errorsCount);
-            mDownloading = false;
-            setInfo();
-        }
+    private boolean startActivity(Context packageContext, Class<?> appToStart) {
+        Intent appToStartIntent = new Intent(packageContext, appToStart);
+        startActivity(appToStartIntent);
+        return true;
+    }
+
+    private void downloadFromUrl(String url, String file) {
+        DownloadFileFromURL downloadFileFromURL = new DownloadFileFromURL();
+        downloadFileFromURL.execute(url, file);
     }
 
     @Override
@@ -438,7 +531,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         if (mNetworkFragment != null) {
             mNetworkFragment.cancelDownload();
         }
-        //mDataText.setText(mDataText.getText() + "\n******************" + testX);
     }
 
     @Override
@@ -459,26 +551,9 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         }
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
+    /**
+     * Timer task for synchronization of positions.
+     */
     class PositionTask extends TimerTask {
 
         @Override
@@ -495,6 +570,9 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
 
     }
 
+    /**
+     * Timer task for sychnronization of messages.
+     */
     class MessageTask extends TimerTask {
 
         @Override
@@ -507,71 +585,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
                     startDownloadMessages();
                 }
             });
-        }
-
-    }
-
-    /**
-     * Background Async Task to download file
-     */
-    class DownloadFileFromURL extends AsyncTask<String, String, String> {
-
-        /**
-         * Before starting background thread Show Progress Bar Dialog
-         */
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        /**
-         * Downloading file in background thread
-         */
-        @Override
-        protected String doInBackground(String... f_url) {
-            int count;
-            String f_url_parts[] = f_url[0].split("/");
-            String filename = f_url[1];
-            try {
-                URL url = new URL(f_url[0]);
-                URLConnection conection = url.openConnection();
-                conection.connect();
-                int lenghtOfFile = conection.getContentLength();
-                InputStream input = new BufferedInputStream(url.openStream(),
-                        8192);
-                String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).toString();
-                OutputStream output = new FileOutputStream(path + "/" + filename);
-                byte data[] = new byte[1024];
-                long total = 0;
-                while ((count = input.read(data)) != -1) {
-                    total += count;
-                    publishProgress("" + (int) ((total * 100) / lenghtOfFile));
-                    output.write(data, 0, count);
-                }
-                output.flush();
-                output.close();
-                input.close();
-            } catch (Exception e) {
-                MainActivity.MM = e.getMessage();
-                Log.e("Error: ", e.getMessage());
-            }
-            return null;
-        }
-
-        /**
-         * Updating progress bar
-         */
-        protected void onProgressUpdate(String... progress) {
-
-        }
-
-        /**
-         * After completing background task Dismiss the progress dialog
-         **/
-        @Override
-        protected void onPostExecute(String file_url) {
-
-
         }
 
     }

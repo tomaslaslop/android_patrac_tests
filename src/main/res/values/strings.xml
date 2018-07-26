@@ -21,14 +21,52 @@
         Pro běh potřebujete zapnutou GPS a datové připojení na Internet (např. 4G LTE).
         Štáb vám také může zaslat zprávu, včetně GPX souboru.
     </string>
-    <string name="fetch_text">Připojit</string>
-    <string name="clear_text">Nastavení</string>
+    <string name="connect">Připojit</string>
+    <string name="disconnect">Odpojit</string>
+    <string name="settings">Nastavení</string>
     <string name="map_text">Mapa</string>
     <string name="send_message_text">Odeslat zprávu</string>
     <string name="connection_error">Chyba připojení</string>
     <string name="fetch_cancelled">Spojení zrušeno</string>
     <string name="title_activity_message_view">Zpráva</string>
     <string name="title_activity_settings">Nastavení</string>
+
+    <!-- Strings related to status -->
+    <string name="positions_label">Pozice získané/logované/odeslané</string>
+    <string name="sessionid_label">SessionId</string>
+    <string name="searchid_label">SearchId</string>
+    <string name="longitude_label">Longitude</string>
+    <string name="latitude_label">Latitude</string>
+    <string name="same_position_label">Pozice je stejná v čase</string>
+
+    <!-- Strings related to download -->
+    <string name="downloaded">Staženo</string>
+    <string name="download_error">Chyba při stažení dat</string>
+    <string name="preparing_data_open">Připravuji otevření dat</string>
+    <string name="ready_for_download">Připraven</string>
+    <string name="error_data_download">Nepodařilo se stáhnout data. Připraven</string>
+
+    <!-- Strings related to maps -->
+    <string name="tracks">Stopy a pozice</string>
+    <string name="local_track">Lokální stopa</string>
+    <string name="searchers_positions">Poslední pozice pátračů</string>
+    <string name="searchers_tracks">Stopy pátračů</string>
+    <string name="preparing_data_wait">Připravuji data. Může chvíli trvat.</string>
+    <string name="less_than_two_positions">V logu jsou méně než dvě pozice.</string>
+    <string name="problem_to_create_log">Problém s vytvořením logu.</string>
+    <string name="downloading_wait">Stahuji data. Může chvíli trvat.</string>
+    <string name="this_device">Toto zařízení</string>
+
+    <!-- Strings related to messages -->
+    <string name="messages_list_title">Seznam zpráv</string>
+    <string name="messages_no_attachment">Bez přílohy</string>
+    <string name="sent_messages_list_title">Seznam odeslaných zpráv</string>
+    <string name="message_when">Kdy</string>
+    <string name="message">Zpráva</string>
+    <string name="message_attachment">Název přílohy</string>
+    <string name="message_attachment_placement">Umístění</string>
+    <string name="message_was_sent">byla odeslána</string>
+
 
     <!-- Strings related to Settings -->
 
@@ -44,6 +82,15 @@
 
     <string name="pref_title_searchid">Identifikátor pátrání</string>
     <string name="pref_default_searchid">AAA111BBB</string>
+    <string name="pref_title_scan_searchid">Naskenovat identifikátor z QR kódu</string>
+    <string name="pref_scan_searchid">pref_scan_searchid</string>
+    <string name="pref_summary_scan_searchid">QR scan</string>
+    <string name="pref_scanner_not_found">Nebyl nalezen skener</string>
+    <string name="pref_scanner_not_found_download">Stráhnout skener?</string>
+    <string name="pref_scanner_not_found_download_yes">Ano</string>
+    <string name="pref_scanner_not_found_download_no">Ne</string>
+    <string name="pref_scanner_identifier">Identifikátor</string>
+    <string name="pref_scanner_format">Formát</string>
 
     <string name="pref_title_add_friends_to_messages">Příjmat zprávy</string>
     <string-array name="pref_example_list_titles">
@@ -59,6 +106,9 @@
 
     <!-- Example settings for Data & Sync -->
     <string name="pref_header_data_sync">Synchronizace</string>
+
+    <string name="pref_title_endpoint">Adresa serveru</string>
+    <string name="pref_default_endpoint">http://gisak.vsb.cz/patrac/mserver.php?</string>
 
     <string name="pref_title_sync_frequency">Frekvence přijímání zpráv</string>
     <string-array name="pref_sync_frequency_titles">
@@ -114,3 +164,6 @@
     <string name="title_activity_maps">MapsActivity</string>
     <string name="title_activity_message_send">Odeslat zprávu</string>
 </resources>
+
+
+

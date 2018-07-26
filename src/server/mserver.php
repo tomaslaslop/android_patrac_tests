@@ -186,8 +186,8 @@ switch ($_REQUEST["operation"]) {
         $SQL = "SELECT DISTINCT id FROM locations WHERE searchid = '".$_REQUEST["searchid"]."'";
         if (isset($_REQUEST["id"])) $SQL .= " AND id = '".$_REQUEST["id"]."'";
         $res = mysql_query($SQL) or die(mysql_error());
-        echo "<?xml version=\"1.0\"?>\n";
-        echo "<gpx version=\"1.1\" creator=\"Patrac Server\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ogr=\"http://osgeo.org/gdal\" xmlns=\"http://www.topografix.com/GPX/1/1\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n";
+        $content = "<?xml version=\"1.0\"?>\n";
+        $content .= "<gpx version=\"1.1\" creator=\"Patrac Server\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ogr=\"http://osgeo.org/gdal\" xmlns=\"http://www.topografix.com/GPX/1/1\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n";
         while ($row = mysql_fetch_array($res)) { 
             $SQL2 = "SELECT lat, lon, dt_created FROM locations WHERE id = '".$row["id"]."' ORDER BY dt_created DESC LIMIT 1";
             $res2 = mysql_query($SQL2) or die(mysql_error());
@@ -198,11 +198,13 @@ switch ($_REQUEST["operation"]) {
             //echo "<trkseg>\n";
             while ($row2 = mysql_fetch_array($res2)) {
                $timeutc = str_replace(" ","T", $row2["dt_created"])."Z";
-               echo "<wpt lat=\"".$row2["lat"]."\" lon=\"".$row2["lon"]."\"><name>".$row3["user_name"]."</name><desc>SessionId: ".$row["id"]."</desc><time>".$timeutc."</time></wpt>\n";
+               $content .= "<wpt lat=\"".$row2["lat"]."\" lon=\"".$row2["lon"]."\"><name>".$row3["user_name"]."</name><desc>SessionId: ".$row["id"]."</desc><time>".$timeutc."</time></wpt>\n";
             }
             //echo "</trkseg></trk>";
         }
-        echo "</gpx>";
+        $content .= "</gpx>";
+        header("Content-Length:".strlen($content));
+        echo $content;        
         die();
         break;
     
@@ -215,23 +217,25 @@ switch ($_REQUEST["operation"]) {
         $SQL = "SELECT DISTINCT id FROM locations WHERE searchid = '".$_REQUEST["searchid"]."'";
         if (isset($_REQUEST["id"])) $SQL .= " AND id = '".$_REQUEST["id"]."'";
         $res = mysql_query($SQL) or die(mysql_error());
-        echo "<?xml version=\"1.0\"?>\n";
-        echo "<gpx version=\"1.1\" creator=\"Patrac Server\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ogr=\"http://osgeo.org/gdal\" xmlns=\"http://www.topografix.com/GPX/1/1\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n";
+        $content = "<?xml version=\"1.0\"?>\n";
+        $content .= "<gpx version=\"1.1\" creator=\"Patrac Server\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ogr=\"http://osgeo.org/gdal\" xmlns=\"http://www.topografix.com/GPX/1/1\" xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n";
         while ($row = mysql_fetch_array($res)) { 
             $SQL2 = "SELECT lat, lon, dt_created FROM locations WHERE id = '".$row["id"]."' ORDER BY dt_created DESC";
             $res2 = mysql_query($SQL2) or die(mysql_error());
             $SQL3 = "SELECT user_name FROM users WHERE id = '".$row["id"]."'";
             $res3 = mysql_query($SQL3) or die(mysql_error()); 
             $row3 = mysql_fetch_array($res3);
-            echo "<trk><name>".$row3["user_name"]."</name><desc>SessionId: ".$row["id"]."</desc>\n";
-            echo "<trkseg>\n";
+            $content .= "<trk><name>".$row3["user_name"]."</name><desc>SessionId: ".$row["id"]."</desc>\n";
+            $content .= "<trkseg>\n";
             while ($row2 = mysql_fetch_array($res2)) {
                $timeutc = str_replace(" ","T", $row2["dt_created"])."Z";
-               echo "<trkpt lat=\"".$row2["lat"]."\" lon=\"".$row2["lon"]."\"><name>".$row3["user_name"]."</name><time>".$timeutc."</time></trkpt>\n";
+               $content .= "<trkpt lat=\"".$row2["lat"]."\" lon=\"".$row2["lon"]."\"><name>".$row3["user_name"]."</name><time>".$timeutc."</time></trkpt>\n";
             }
-            echo "</trkseg></trk>";
+            $content .= "</trkseg></trk>";
         }
-        echo "</gpx>";
+        $content .= "</gpx>";
+        header("Content-Length:".strlen($content));
+        echo $content;        
         die();
         break;
 

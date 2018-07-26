@@ -3,7 +3,7 @@ package cz.vsb.gis.ruz76.patrac.android;
 import java.util.Date;
 
 /**
- * Created by jencek on 12.2.18.
+ * Class for holding waypoint.
  */
 
 public class Waypoint {
