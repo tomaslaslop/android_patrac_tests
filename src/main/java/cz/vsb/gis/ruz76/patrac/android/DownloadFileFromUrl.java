@@ -1,6 +1,7 @@
 package cz.vsb.gis.ruz76.patrac.android;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -8,6 +9,7 @@ import android.os.Environment;
 import android.os.StrictMode;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -21,7 +23,7 @@ import java.util.Arrays;
 /**
  * Background Async Task to download file.
  */
-public class DownloadFileFromURL extends AsyncTask<String, String, String> {
+public class DownloadFileFromUrl extends AsyncTask<String, String, String> {
 
     private TextView textStatus = null;
     private boolean openFile = false;
@@ -121,7 +123,12 @@ public class DownloadFileFromURL extends AsyncTask<String, String, String> {
             File file = new File(path);
             if (file.exists()) {
                 if (activity != null) {
-                    activity.startActivity(i);
+                    try {
+                        activity.startActivity(i);
+                    } catch (ActivityNotFoundException exception) {
+                        Toast toast = Toast.makeText(activity, R.string.can_not_open_activity, Toast.LENGTH_LONG);
+                        toast.show();
+                    }
                 }
                 if (textStatus != null) {
                     textStatus.setText(R.string.ready_for_download);

@@ -56,6 +56,7 @@
     <string name="problem_to_create_log">Problém s vytvořením logu.</string>
     <string name="downloading_wait">Stahuji data. Může chvíli trvat.</string>
     <string name="this_device">Toto zařízení</string>
+    <string name="can_not_open_activity">Pro daný soubor není k dispozici prohlížeč</string>
 
     <!-- Strings related to messages -->
     <string name="messages_list_title">Seznam zpráv</string>
@@ -63,10 +64,10 @@
     <string name="sent_messages_list_title">Seznam odeslaných zpráv</string>
     <string name="message_when">Kdy</string>
     <string name="message">Zpráva</string>
-    <string name="message_attachment">Název přílohy</string>
+    <string name="message_attachment_name">Název přílohy</string>
     <string name="message_attachment_placement">Umístění</string>
     <string name="message_was_sent">byla odeslána</string>
-
+    <string name="message_was_not_sent">nebyla odeslána</string>
 
     <!-- Strings related to Settings -->
 
@@ -85,6 +86,7 @@
     <string name="pref_title_scan_searchid">Naskenovat identifikátor z QR kódu</string>
     <string name="pref_scan_searchid">pref_scan_searchid</string>
     <string name="pref_summary_scan_searchid">QR scan</string>
+    <string name="pref_title_systemid">Systémový identifikátor</string>
     <string name="pref_scanner_not_found">Nebyl nalezen skener</string>
     <string name="pref_scanner_not_found_download">Stráhnout skener?</string>
     <string name="pref_scanner_not_found_download_yes">Ano</string>
@@ -163,6 +165,18 @@
     <string name="pref_title_vibrate">Vibrace</string>
     <string name="title_activity_maps">MapsActivity</string>
     <string name="title_activity_message_send">Odeslat zprávu</string>
+
+    <string name="message_send">Odeslat</string>
+    <string name="message_attachment">Příloha</string>
+
+    <string name="message_attachment_was_append">byla vložena</string>
+    <string name="message_attachment_select">Vyberte přílohu</string>
+    <string name="coordinator">Štáb</string>
+
+    <string name="title_activity_call_on_duty">Aktuální pátrání</string>
+    <string name="activity_call_on_duty_description">Připojte se k pátrání, kliknutím na pátrání v seznamu. Pokud je seznam prázdný, došlo k chybě, kontaktujte dipečnink.</string>
+    <string name="call_on_duty_selected">Právě jste se připojili k pátrání. Až dorazíte na místo nezapomeňte zahájit sledování pomocí tlačítka Připojit.</string>
+
 </resources>
 
 

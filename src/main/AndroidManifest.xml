@@ -55,7 +55,10 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".MessageSend"
-            android:label="@string/title_activity_message_send"></activity>
+            android:label="@string/title_activity_message_send" />
+        <activity
+            android:name=".CallOnDutyActivity"
+            android:label="@string/title_activity_call_on_duty"></activity>
     </application>
 
 </manifest>

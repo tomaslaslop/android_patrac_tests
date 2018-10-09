@@ -21,10 +21,14 @@
         <ListView
             android:id="@+id/gpxListView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="168dp"
             tools:layout_editor_absoluteX="12dp"
-            tools:layout_editor_absoluteY="12dp" >
-        </ListView>
+            tools:layout_editor_absoluteY="12dp"></ListView>
+
+        <org.osmdroid.views.MapView android:id="@+id/map"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

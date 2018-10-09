@@ -18,6 +18,7 @@
 package cz.vsb.gis.ruz76.patrac.android;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -27,15 +28,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -45,6 +41,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -58,17 +55,21 @@ import java.util.TimerTask;
 /**
  * Main Activity.
  */
-public class MainActivity extends FragmentActivity implements DownloadCallback, LocationListener {
+public class MainActivity extends Activity implements LocationListener, GetRequestUpdate {
     public static String StatusMessages = null;
     public static ArrayList<Waypoint> waypoints;
+    public static RequestMode mode = RequestMode.SLEEPING;
     private TextView mDataText;
     private TextView mStatusText;
     private ListView messagesListView;
+    private Intent callOnDuty;
     public static String sessionId = null;
     public static String searchid;
     public static String endPoint;
-    double lat = 0;
-    double lon = 0;
+    public double lat = 0;
+    public double lon = 0;
+    public double latFromListener = 0;
+    public double lonFromListener = 0;
     int positionCount = 0;
     int loggedPositionCount = 0;
     int sendPositionCount = 0;
@@ -82,9 +83,11 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     PositionTask myPositionTask;
     Timer timerMessage;
     MessageTask myMessageTask;
+    Timer timerSearch;
+    SearchTask mySearchTask;
+    Timer timerCallOnDuty;
+    CallOnDutyTask myCallOnDutyTask;
     SharedPreferences sharedPrefs;
-
-    private NetworkFragment mNetworkFragment;
 
     // Boolean telling us whether a download is in progress, so we don't trigger overlapping
     // downloads with consecutive button clicks.
@@ -103,7 +106,13 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
 
     //Methods from Location Listener
     @Override
-    public void onLocationChanged(Location location) {}
+    public void onLocationChanged(Location location) throws SecurityException {
+        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (locationGPS != null) {
+            latFromListener = locationGPS.getLatitude();
+            lonFromListener = locationGPS.getLongitude();
+        }
+    }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -121,10 +130,16 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
      * @param savedInstanceState
      */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) throws SecurityException {
         super.onCreate(savedInstanceState);
         setPermissions();
         setContentView(R.layout.activity_main);
+        setSearchTimer();
+        context = this.getApplicationContext();
+        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        endPoint = sharedPrefs.getString("endpoint", getString(R.string.pref_default_endpoint));
+        locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     }
 
     /**
@@ -196,18 +211,13 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         messagesCount = 0;
         errorsCount = 0;
 
-        sessionId = null;
+        mode = RequestMode.TRACKING;
 
-        sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        sessionId = null;
 
         mDataText = (TextView) findViewById(R.id.data_text);
         mStatusText = (TextView) findViewById(R.id.status_text);
         messagesListView = (ListView) findViewById(R.id.messagesListView);
-
-        endPoint = sharedPrefs.getString("endpoint", getString(R.string.pref_default_endpoint));
-
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), endPoint + "operation=getid");
-        context = this.getApplicationContext();
 
         waypoints = new ArrayList<Waypoint>();
         searchid = sharedPrefs.getString("searchid", getString(R.string.pref_default_searchid));
@@ -241,8 +251,39 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
      * It is triggered when the download of the data from Download is finished.
      * @param result response from the server
      */
-    @Override
-    public void updateFromDownload(String result) {
+    public void processResponse(String result) {
+        switch (mode) {
+            case SLEEPING:
+                processSearchesResponse(result);
+                break;
+            case WAITING:
+                processCallOnDutyResponse(result);
+                break;
+            case SELECTED:
+                processSelectedResponse(result);
+                break;
+            case TRACKING:
+                processTrackingResponse(result);
+                break;
+            default:
+                // processSearchesResponse(result);
+                // do nothing
+        }
+
+    }
+
+    /**
+     * Reads results from server in mode tracking.
+     * There can be three four.
+     * ID, M, P and null.
+     * ID - we have obtained session identifier from the server.
+     * M - we have obtained message from server.
+     * P - we have obtained information that position was saved.
+     * null - some error occured
+     *
+     * @param result result to process
+     */
+    private void processTrackingResponse(String result) {
         if (result != null) {
             if (result.startsWith("ID:")) {
                 sendPositionCount++;
@@ -262,6 +303,106 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
             mDownloading = false;
             setInfo();
         }
+    }
+
+    /**
+     * Reads response in sleeping mode.
+     * May contain have four states: *, #, empty, null
+     * * - there is at least one active search on the server
+     * # - the position of device was stored to the database, so we can switch to waiting mode
+     * empty - nothing to do
+     * null - some error occurred - nothing to do
+     *
+     * @param result result to process
+     */
+    private void processSearchesResponse(String result) {
+        if (result != null) {
+            if (!result.isEmpty() && RequestMode.SLEEPING == mode) {
+                if (result.startsWith("*")) {
+                    // there is a new search
+                    String id = sharedPrefs.getString("id", null);
+                    if (id != null) {
+                        sendGetRequest(endPoint + "operation=searches&id=" + id + "&lat=" + getShortCoord(latFromListener) + "&lon=" + getShortCoord(lonFromListener));
+                    }
+                }
+                if (result.startsWith("#")) {
+                    // the coordinates where saved at the server
+                    mode = RequestMode.WAITING;
+                    setCallOnDutyTimer();
+                }
+            }
+        }
+    }
+
+    /**
+     * Reads response in waiting mode.
+     * May contain three states: list, empty, null
+     * list - list of active searches on the server
+     * empty - no searches on call
+     * null - some error occurred - nothing to do
+     *
+     * @param result result to process
+     */
+    private void processCallOnDutyResponse(String result) {
+        if (result != null) {
+            if (!result.isEmpty() && RequestMode.WAITING == mode) {
+                // reads lists of searches
+                String[] searches = result.split("\n");
+                // TODO do it better
+                if (callOnDuty == null) {
+                    playRing();
+                    callOnDuty = new Intent(MainActivity.this, CallOnDutyActivity.class);
+                    callOnDuty.putExtra("searches", searches);
+                    startActivity(callOnDuty);
+                }
+            }
+        }
+    }
+
+    /**
+     * Reads response in selected mode. User has selected the search.
+     * May contain two states: some data, null
+     * some data - server knows that you are ready
+     * null - some error occurred - nothing to do TODO - do something, otherwise the call is not connected
+     *
+     * @param result result to process
+     */
+    private void processSelectedResponse(String result) {
+        if (result != null) {
+            if (!result.isEmpty() && RequestMode.SELECTED == mode) {
+                // the searchid was saved at the server
+                SharedPreferences.Editor editor = sharedPrefs.edit();
+                editor.putString("searchid", searchid);
+                editor.commit();
+                mode = RequestMode.TRACKING;
+            }
+        }
+    }
+
+    /**
+     * Timer for sleeping and waiting mode.
+     */
+    private void setSearchTimer() {
+        if (timerSearch != null) {
+            timerSearch.cancel();
+        }
+
+        timerSearch = new Timer();
+        mySearchTask = new SearchTask();
+        timerSearch.schedule(mySearchTask, 30000, 1000 * 60 * 1);
+    }
+
+    /**
+     * Timer for call on duty state.
+     */
+    private void setCallOnDutyTimer() {
+        if (timerCallOnDuty != null) {
+            timerCallOnDuty.cancel();
+        }
+
+        timerCallOnDuty = new Timer();
+        myCallOnDutyTask = new CallOnDutyTask();
+        timerCallOnDuty.schedule(myCallOnDutyTask, 0, 1000 * 5);
     }
 
     /**
@@ -312,8 +453,8 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         //Maybe put phone number instead of NN and random
         String user_name = sharedPrefs.getString("user_name", "NN " + Math.round(Math.random() * 10000));
         try {
-            if (!mDownloading && mNetworkFragment != null) {
-                mNetworkFragment.startDownload(endPoint + "operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
+            if (!mDownloading) {
+                sendGetRequest(endPoint + "operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
                 mDownloading = true;
             }
         } catch (UnsupportedEncodingException e) {
@@ -330,9 +471,11 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
         double newlat = 0;
         double newlon = 0;
         boolean logit = false;
-        locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (locationGPS == null) {
+            // we do not have location yet, so wait for location to the next interval
+            return false;
+        }
         newlat = locationGPS.getLatitude();
         newlon = locationGPS.getLongitude();
         positionCount++;
@@ -355,7 +498,7 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
      */
     private void sendTrack() {
         if ((sendPositionCount == (loggedPositionCount - 1))) {
-            mNetworkFragment.startDownload(endPoint + "operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
+            sendGetRequest(endPoint + "operation=sendlocation&searchid=" + searchid + "&id=" + sessionId + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
         } else {
             //Some time out of network. Must send more coords from memory.
             //TODO change to POST to be able send more than 100 coords
@@ -369,8 +512,10 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
                 Waypoint wp = MainActivity.waypoints.get(i);
                 notSendedCoords += getShortCoord(wp.getLon()) + ";" + getShortCoord(wp.getLat()) + ",";
             }
-            notSendedCoords = notSendedCoords.substring(0, notSendedCoords.length() - 2);
-            mNetworkFragment.startDownload(endPoint + "operation=sendlocations&searchid=" + searchid + "&id=" + sessionId + "&coords=" + notSendedCoords);
+            if (notSendedCoords.length() > 10) {
+                notSendedCoords = notSendedCoords.substring(0, notSendedCoords.length() - 2);
+                sendGetRequest(endPoint + "operation=sendlocations&searchid=" + searchid + "&id=" + sessionId + "&coords=" + notSendedCoords);
+            }
         }
         mDownloading = true;
     }
@@ -391,18 +536,17 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
      * Sends coordinates to the server.
      * @throws SecurityException
      */
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void startSync() throws SecurityException {
         boolean logit = trackLocation();
         mDownloading = false;
         if (MainActivity.StatusMessages != null) mStatusText.setText(MainActivity.StatusMessages);
-        if (!mDownloading && mNetworkFragment != null) {
+        if (!mDownloading) {
             // First we have to obtain the sessionId.
             if (sessionId == null) {
                 getSessionId();
             } else {
                 if (logit) {
-                    if (!mDownloading && mNetworkFragment != null) {
+                    if (!mDownloading) {
                         sendTrack();
                     }
                 } else {
@@ -431,18 +575,41 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
      * Starts downloading a message.
      */
     private void startDownloadMessages() {
-        if (!mDownloading && mNetworkFragment != null) {
+        if (!mDownloading) {
             // we do not have session id yet, so ask for it
             if (sessionId == null) {
-                mNetworkFragment.startDownload(endPoint + "operation=getid&searchid=" + searchid);
+                sendGetRequest(endPoint + "operation=getid&searchid=" + searchid);
                 mDownloading = true;
             } else {
                 boolean messages_switch = sharedPrefs.getBoolean("messages_switch", true);
                 if (messages_switch) {
-                    mNetworkFragment.startDownload(endPoint + "operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
+                    sendGetRequest(endPoint + "operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
                     mDownloading = true;
                 }
             }
+        }
+    }
+
+    /**
+     * Checks new search.
+     */
+    private void checkSearches() {
+        String id = sharedPrefs.getString("id", null);
+        if (id != null && RequestMode.SLEEPING == mode) {
+            sendGetRequest(endPoint + "operation=searches&id=" + id);
+        }
+    }
+
+    /**
+     * Check call on duty request.
+     */
+    public void checkCallOnDuty() {
+        String id = sharedPrefs.getString("id", null);
+        if (id != null && RequestMode.WAITING == mode) {
+            sendGetRequest(endPoint + "operation=searches&id=" + id);
+        }
+        if (id != null && RequestMode.SELECTED == mode) {
+            sendGetRequest(endPoint + "operation=searches&id=" + id + "&searchid=" + searchid);
         }
     }
 
@@ -513,42 +680,14 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     }
 
     private void downloadFromUrl(String url, String file) {
-        DownloadFileFromURL downloadFileFromURL = new DownloadFileFromURL();
-        downloadFileFromURL.execute(url, file);
+        DownloadFileFromUrl downloadFileFromUrl = new DownloadFileFromUrl();
+        downloadFileFromUrl.execute(url, file);
     }
 
-    @Override
-    public NetworkInfo getActiveNetworkInfo() {
-        ConnectivityManager connectivityManager =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        return networkInfo;
-    }
-
-    @Override
-    public void finishDownloading() {
-        mDownloading = false;
-        if (mNetworkFragment != null) {
-            mNetworkFragment.cancelDownload();
-        }
-    }
-
-    @Override
-    public void onProgressUpdate(int progressCode, int percentComplete) {
-        switch (progressCode) {
-            // You can add UI behavior for progress updates here.
-            case Progress.ERROR:
-                break;
-            case Progress.CONNECT_SUCCESS:
-                break;
-            case Progress.GET_INPUT_STREAM_SUCCESS:
-                break;
-            case Progress.PROCESS_INPUT_STREAM_IN_PROGRESS:
-                //mDataText.setText("" + percentComplete + "%");
-                break;
-            case Progress.PROCESS_INPUT_STREAM_SUCCESS:
-                break;
-        }
+    private void sendGetRequest(String url) {
+        ServerGetRequest serverGetRequest = new ServerGetRequest();
+        serverGetRequest.setActivity(this);
+        serverGetRequest.execute(url);
     }
 
     /**
@@ -558,7 +697,6 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
 
         @Override
         public void run() {
-
             runOnUiThread(new Runnable() {
 
                 @Override
@@ -571,18 +709,53 @@ public class MainActivity extends FragmentActivity implements DownloadCallback, 
     }
 
     /**
-     * Timer task for sychnronization of messages.
+     * Timer task for synchronization of messages.
      */
     class MessageTask extends TimerTask {
 
         @Override
         public void run() {
-
             runOnUiThread(new Runnable() {
 
                 @Override
                 public void run() {
                     startDownloadMessages();
+                }
+            });
+        }
+
+    }
+
+    /**
+     * Timer task for synchronization of messages.
+     */
+    class SearchTask extends TimerTask {
+
+        @Override
+        public void run() {
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    checkSearches();
+                }
+            });
+        }
+
+    }
+
+    /**
+     * Timer task for synchronization of messages.
+     */
+    class CallOnDutyTask extends TimerTask {
+
+        @Override
+        public void run() {
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    checkCallOnDuty();
                 }
             });
         }

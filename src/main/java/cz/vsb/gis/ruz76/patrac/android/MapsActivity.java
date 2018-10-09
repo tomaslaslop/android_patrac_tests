@@ -1,7 +1,13 @@
 package cz.vsb.gis.ruz76.patrac.android;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Activity;
@@ -13,6 +19,13 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.osmdroid.api.IMapController;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,13 +41,17 @@ import java.util.TimeZone;
 /**
  * Class for downloading GPX tracks.
  */
-public class MapsActivity extends Activity {
+public class MapsActivity extends Activity implements LocationListener, GetRequestUpdate {
 
     private List<String> gpx_list;
     private List<String> gpx_list_files;
     private ArrayAdapter<String> arrayAdapter;
     private ListView gpxListView;
     private TextView mTextStatus;
+    private MapView map = null;
+    private LocationManager locationManager;
+    private Context context;
+    private Marker startMarker;
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -66,6 +83,8 @@ public class MapsActivity extends Activity {
 
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
+
+        setUpMapView();
 
         String[] gpxs = new String[] { getString(R.string.local_track), getString(R.string.searchers_positions), getString(R.string.searchers_tracks) };
         gpx_list = new ArrayList<String>(Arrays.asList(gpxs));
@@ -99,7 +118,12 @@ public class MapsActivity extends Activity {
                         i.setDataAndType(Uri.parse("file://" + path), "application/gpx+xml");
                         File file = new File(path);
                         if (file.exists()) {
-                            startActivity(i);
+                            try {
+                                startActivity(i);
+                            } catch (ActivityNotFoundException exception) {
+                                Toast toast = Toast.makeText(MapsActivity.this, R.string.can_not_open_activity, Toast.LENGTH_LONG);
+                                toast.show();
+                            }
                             mTextStatus.setText(R.string.ready_for_download);
                         } else {
                             mTextStatus.setText(R.string.error_data_download);
@@ -156,12 +180,120 @@ public class MapsActivity extends Activity {
 
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        //this will refresh the osmdroid configuration on resuming.
+        //if you make changes to the configuration, use
+        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
+        map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        //this will refresh the osmdroid configuration on resuming.
+        //if you make changes to the configuration, use
+        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        //Configuration.getInstance().save(this, prefs);
+        map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
+    }
+
+    @SuppressLint("MissingPermission")
+    private void setUpMapView() {
+
+        context = this.getApplicationContext();
+        locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        double newlat = 49.8;
+        double newlon = 18.1;
+        if (locationGPS != null) {
+            newlat = locationGPS.getLatitude();
+            newlon = locationGPS.getLongitude();
+        }
+
+        map = (MapView) findViewById(R.id.map);
+        map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setBuiltInZoomControls(true);
+        map.setMultiTouchControls(true);
+        IMapController mapController = map.getController();
+        GeoPoint startPoint = new GeoPoint(newlat, newlon);
+        mapController.setCenter(startPoint);
+        mapController.setZoom(12d);
+
+        startMarker = new Marker(map);
+        startMarker.setPosition(startPoint);
+        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        startMarker.setIcon(context.getResources().getDrawable(R.drawable.green_square_24dp));
+        startMarker.setTitle(getString(R.string.this_device));
+        map.getOverlays().add(startMarker);
+
+        getLocations();
+
+        //startMarker.setIcon(context.getResources().getDrawable(R.drawable.ic_info_black_24dp));
+        //mapController.zoomTo(9, 1000L);
+    }
+
     private void downloadFromUrl(String url, String fileName) {
-        DownloadFileFromURL downloadFileFromURL = new DownloadFileFromURL();
-        downloadFileFromURL.setActivity(this);
-        downloadFileFromURL.setOpenFile(true);
-        downloadFileFromURL.setTextStatus(mTextStatus);
-        downloadFileFromURL.setFileName(fileName);
-        downloadFileFromURL.execute(url);
+        DownloadFileFromUrl downloadFileFromUrl = new DownloadFileFromUrl();
+        downloadFileFromUrl.setActivity(this);
+        downloadFileFromUrl.setOpenFile(true);
+        downloadFileFromUrl.setTextStatus(mTextStatus);
+        downloadFileFromUrl.setFileName(fileName);
+        downloadFileFromUrl.execute(url);
+    }
+
+    private void getLocations() {
+        ServerGetRequest serverGetRequest = new ServerGetRequest();
+        serverGetRequest.setActivity(this);
+        serverGetRequest.setTextStatus(mTextStatus);
+        serverGetRequest.execute(MainActivity.endPoint + "operation=getlocations&searchid=" + MainActivity.searchid);
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        GeoPoint startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
+        startMarker.setPosition(startPoint);
+        map.getController().setCenter(startPoint);
+        map.invalidate();
+    }
+
+    @Override
+    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String s) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String s) {
+
+    }
+
+    @Override
+    public void processResponse(String result) {
+        if (result != null) {
+            String[] searchers = result.split("\n");
+            for (int i = 0; i < searchers.length; i++) {
+                String[] items = searchers[i].split(";");
+                if (items.length > 5) {
+                    Marker itemMarker = new Marker(map);
+                    double lon = Double.parseDouble(items[4].split(" ")[0]);
+                    double lat = Double.parseDouble(items[4].split(" ")[1]);
+                    GeoPoint startPoint = new GeoPoint(lat, lon);
+                    itemMarker.setPosition(startPoint);
+                    itemMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                    itemMarker.setIcon(context.getResources().getDrawable(R.drawable.ic_info_black_24dp));
+                    itemMarker.setTitle(items[3]);
+                    map.getOverlays().add(itemMarker);
+                }
+            }
+            map.invalidate();
+        }
     }
 }

@@ -3,5 +3,9 @@
     <item
         android:id="@+id/send_message_action"
         android:showAsAction="ifRoom|withText"
-        android:title="Odeslat" />
+        android:title="@string/message_send" />
+    <item
+        android:id="@+id/send_message_attachment_action"
+        android:showAsAction="ifRoom|withText"
+        android:title="@string/message_attachment" />
 </menu>
