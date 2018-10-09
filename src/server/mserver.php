@@ -1,5 +1,7 @@
 <?php
 
+require('config.php');
+
 function uploadFile($id) {
 
     if (!isset($_FILES["fileToUpload"])) return "";
@@ -297,8 +299,8 @@ function processOperationBasedOnSearchId() {
 //file_put_contents("/tmp/mserver_debug.txt", file_get_contents("php://input"));
 //echo "OK";
 
-mysql_connect("127.0.0.1", "username", "userpassword") or die(mysql_error());;
-mysql_select_db("patrac") or die(mysql_error());
+mysql_connect($_HOSTNAME, $_USERNAME, $_PASSWORD) or die(mysql_error());;
+mysql_select_db($_DBNAME) or die(mysql_error());
 
 if (!isset($_REQUEST["operation"])) die();
 if ($_REQUEST["operation"] == "searches") {

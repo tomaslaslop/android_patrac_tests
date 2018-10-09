@@ -89,10 +89,6 @@ public class MainActivity extends Activity implements LocationListener, GetReque
     CallOnDutyTask myCallOnDutyTask;
     SharedPreferences sharedPrefs;
 
-    // Boolean telling us whether a download is in progress, so we don't trigger overlapping
-    // downloads with consecutive button clicks.
-    private boolean mDownloading = false;
-
     protected Context context;
 
     // Create a List from String Array elements
@@ -115,18 +111,22 @@ public class MainActivity extends Activity implements LocationListener, GetReque
     }
 
     @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {}
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
 
     @Override
-    public void onProviderEnabled(String provider) {}
+    public void onProviderEnabled(String provider) {
+    }
 
     @Override
-    public void onProviderDisabled(String provider) {}
+    public void onProviderDisabled(String provider) {
+    }
 
     /**
      * Creates instances from saved state.
      * Sets permissions or requests permissions.
      * Sets gui based on layout activity_main.
+     *
      * @param savedInstanceState
      */
     @Override
@@ -144,6 +144,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * Ads items to the menu.
+     *
      * @param menu
      * @return
      */
@@ -155,6 +156,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * Invoked on menu click.
+     *
      * @param item
      * @return
      */
@@ -249,6 +251,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * It is triggered when the download of the data from Download is finished.
+     *
      * @param result response from the server
      */
     public void processResponse(String result) {
@@ -300,7 +303,6 @@ public class MainActivity extends Activity implements LocationListener, GetReque
             DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
             Date date = new Date();
             mStatusText.setText(getString(R.string.connection_error) + " v " + dateFormat.format(date) + ". Celkem chyb: " + errorsCount);
-            mDownloading = false;
             setInfo();
         }
     }
@@ -453,10 +455,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
         //Maybe put phone number instead of NN and random
         String user_name = sharedPrefs.getString("user_name", "NN " + Math.round(Math.random() * 10000));
         try {
-            if (!mDownloading) {
-                sendGetRequest(endPoint + "operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
-                mDownloading = true;
-            }
+            sendGetRequest(endPoint + "operation=getid&searchid=" + searchid + "&user_name=" + URLEncoder.encode(user_name, "UTF-8") + "&lat=" + getShortCoord(lat) + "&lon=" + getShortCoord(lon));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -464,6 +463,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * Reads location from system and compares it to the previous position.
+     *
      * @return true if the position should be logged
      * @throws SecurityException
      */
@@ -517,7 +517,6 @@ public class MainActivity extends Activity implements LocationListener, GetReque
                 sendGetRequest(endPoint + "operation=sendlocations&searchid=" + searchid + "&id=" + sessionId + "&coords=" + notSendedCoords);
             }
         }
-        mDownloading = true;
     }
 
     /**
@@ -534,30 +533,28 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * Sends coordinates to the server.
+     *
      * @throws SecurityException
      */
     private void startSync() throws SecurityException {
         boolean logit = trackLocation();
-        mDownloading = false;
         if (MainActivity.StatusMessages != null) mStatusText.setText(MainActivity.StatusMessages);
-        if (!mDownloading) {
-            // First we have to obtain the sessionId.
-            if (sessionId == null) {
-                getSessionId();
+        // First we have to obtain the sessionId.
+        if (sessionId == null) {
+            getSessionId();
+        } else {
+            if (logit) {
+                sendTrack();
             } else {
-                if (logit) {
-                    if (!mDownloading) {
-                        sendTrack();
-                    }
-                } else {
-                    showInfoSamePosition();
-                }
+                showInfoSamePosition();
             }
         }
+
     }
 
     /**
      * Flat the coordinate to has just 6 decimal points.
+     *
      * @param coord coordinate to flat
      * @return flatted coordinate
      */
@@ -575,17 +572,13 @@ public class MainActivity extends Activity implements LocationListener, GetReque
      * Starts downloading a message.
      */
     private void startDownloadMessages() {
-        if (!mDownloading) {
-            // we do not have session id yet, so ask for it
-            if (sessionId == null) {
-                sendGetRequest(endPoint + "operation=getid&searchid=" + searchid);
-                mDownloading = true;
-            } else {
-                boolean messages_switch = sharedPrefs.getBoolean("messages_switch", true);
-                if (messages_switch) {
-                    sendGetRequest(endPoint + "operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
-                    mDownloading = true;
-                }
+        // we do not have session id yet, so ask for it
+        if (sessionId == null) {
+            sendGetRequest(endPoint + "operation=getid&searchid=" + searchid);
+        } else {
+            boolean messages_switch = sharedPrefs.getBoolean("messages_switch", true);
+            if (messages_switch) {
+                sendGetRequest(endPoint + "operation=getmessages&searchid=" + searchid + "&id=" + sessionId);
             }
         }
     }
@@ -634,6 +627,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     /**
      * Process the new message. If there is an attachment it is downloaded.
+     *
      * @param result reponse from the server
      */
     private void processMessage(String result) {

@@ -226,7 +226,7 @@ public class MapsActivity extends Activity implements LocationListener, GetReque
         startMarker = new Marker(map);
         startMarker.setPosition(startPoint);
         startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        startMarker.setIcon(context.getResources().getDrawable(R.drawable.green_square_24dp));
+        startMarker.setIcon(context.getResources().getDrawable(R.drawable.green_square_16dp));
         startMarker.setTitle(getString(R.string.this_device));
         map.getOverlays().add(startMarker);
 
