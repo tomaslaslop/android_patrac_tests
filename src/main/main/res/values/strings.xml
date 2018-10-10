@@ -1,0 +1,191 @@
+<!--
+  Copyright 2013 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<resources>
+    <string name="welcome_message">
+        Vítejte v monitoru pátrače. Zmáčkněte tlačítko Připojit pro spojení se serverem.
+        Aplikace odesílá vaši polohu na server. Štáb může sledovat vaši pozici v reálném čase.
+        Pro běh potřebujete zapnutou GPS a datové připojení na Internet (např. 4G LTE).
+        Štáb vám také může zaslat zprávu, včetně GPX souboru.
+    </string>
+    <string name="connect">Připojit</string>
+    <string name="disconnect">Odpojit</string>
+    <string name="settings">Nastavení</string>
+    <string name="map_text">Mapa</string>
+    <string name="send_message_text">Odeslat zprávu</string>
+    <string name="connection_error">Chyba připojení</string>
+    <string name="fetch_cancelled">Spojení zrušeno</string>
+    <string name="title_activity_message_view">Zpráva</string>
+    <string name="title_activity_settings">Nastavení</string>
+
+    <!-- Strings related to status -->
+    <string name="positions_label">Pozice získané/logované/odeslané</string>
+    <string name="sessionid_label">SessionId</string>
+    <string name="searchid_label">SearchId</string>
+    <string name="longitude_label">Longitude</string>
+    <string name="latitude_label">Latitude</string>
+    <string name="same_position_label">Pozice je stejná v čase</string>
+
+    <!-- Strings related to download -->
+    <string name="downloaded">Staženo</string>
+    <string name="download_error">Chyba při stažení dat</string>
+    <string name="preparing_data_open">Připravuji otevření dat</string>
+    <string name="ready_for_download">Připraven</string>
+    <string name="error_data_download">Nepodařilo se stáhnout data. Připraven</string>
+
+    <!-- Strings related to maps -->
+    <string name="tracks">Stopy a pozice</string>
+    <string name="local_track">Lokální stopa</string>
+    <string name="searchers_positions">Poslední pozice pátračů</string>
+    <string name="searchers_tracks">Stopy pátračů</string>
+    <string name="preparing_data_wait">Připravuji data. Může chvíli trvat.</string>
+    <string name="less_than_two_positions">V logu jsou méně než dvě pozice.</string>
+    <string name="problem_to_create_log">Problém s vytvořením logu.</string>
+    <string name="downloading_wait">Stahuji data. Může chvíli trvat.</string>
+    <string name="this_device">Toto zařízení</string>
+    <string name="can_not_open_activity">Pro daný soubor není k dispozici prohlížeč</string>
+
+    <!-- Strings related to messages -->
+    <string name="messages_list_title">Seznam zpráv</string>
+    <string name="messages_no_attachment">Bez přílohy</string>
+    <string name="sent_messages_list_title">Seznam odeslaných zpráv</string>
+    <string name="message_when">Kdy</string>
+    <string name="message">Zpráva</string>
+    <string name="message_attachment_name">Název přílohy</string>
+    <string name="message_attachment_placement">Umístění</string>
+    <string name="message_was_sent">byla odeslána</string>
+    <string name="message_was_not_sent">nebyla odeslána</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">Obecné</string>
+
+    <string name="pref_title_social_recommendations">Povolit příjem zpráv</string>
+    <string name="pref_description_social_recommendations">Povolit příjem zpráv
+    </string>
+
+    <string name="pref_title_display_name">Jméno</string>
+    <string name="pref_default_display_name">Karel Vomáčka</string>
+
+    <string name="pref_title_searchid">Identifikátor pátrání</string>
+    <string name="pref_default_searchid">AAA111BBB</string>
+    <string name="pref_title_scan_searchid">Naskenovat identifikátor z QR kódu</string>
+    <string name="pref_scan_searchid">pref_scan_searchid</string>
+    <string name="pref_summary_scan_searchid">QR scan</string>
+    <string name="pref_title_systemid">Systémový identifikátor</string>
+    <string name="pref_scanner_not_found">Nebyl nalezen skener</string>
+    <string name="pref_scanner_not_found_download">Stráhnout skener?</string>
+    <string name="pref_scanner_not_found_download_yes">Ano</string>
+    <string name="pref_scanner_not_found_download_no">Ne</string>
+    <string name="pref_scanner_identifier">Identifikátor</string>
+    <string name="pref_scanner_format">Formát</string>
+
+    <string name="pref_title_add_friends_to_messages">Příjmat zprávy</string>
+    <string-array name="pref_example_list_titles">
+        <item>Vždy</item>
+        <item>Když je to možné</item>
+        <item>Nikdy</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Synchronizace</string>
+
+    <string name="pref_title_endpoint">Adresa serveru</string>
+    <string name="pref_default_endpoint">http://gisak.vsb.cz/patrac/mserver.php?</string>
+
+    <string name="pref_title_sync_frequency">Frekvence přijímání zpráv</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>30 sekund</item>
+        <item>1 minuta</item>
+        <item>5 minut</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+    </string-array>
+
+    <string name="pref_title_sync_frequency_gps">Frekvence odesílání pozice</string>
+    <string-array name="pref_sync_frequency_gps_titles">
+        <item>5 sekund</item>
+        <item>10 sekund</item>
+        <item>30 sekund</item>
+        <item>1 minuta</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_gps_values">
+        <item>5</item>
+        <item>10</item>
+        <item>30</item>
+        <item>60</item>
+    </string-array>
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_system_sync_settings">Nastavení synchronizace</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Upozornění</string>
+
+    <string name="pref_title_new_message_notifications">Upozornění na novou zprávu</string>
+
+    <string name="pref_title_ringtone">Zvuk</string>
+    <string name="pref_ringtone_silent">Ticho</string>
+
+    <string name="pref_title_vibrate">Vibrace</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="title_activity_message_send">Odeslat zprávu</string>
+
+    <string name="message_send">Odeslat</string>
+    <string name="message_attachment">Příloha</string>
+
+    <string name="message_attachment_was_append">byla vložena</string>
+    <string name="message_attachment_select">Vyberte přílohu</string>
+    <string name="coordinator">Štáb</string>
+
+    <string name="title_activity_call_on_duty">Aktuální pátrání</string>
+    <string name="activity_call_on_duty_description">Připojte se k pátrání, kliknutím na pátrání v seznamu. Pokud je seznam prázdný, došlo k chybě, kontaktujte dipečnink.</string>
+    <string name="call_on_duty_selected">Právě jste se připojili k pátrání. Až dorazíte na místo nezapomeňte zahájit sledování pomocí tlačítka Připojit.</string>
+
+    <string name="mode_sleeping">Čekám na pátrání</string>
+    <string name="mode_waiting">Čekám na pozvání k pátrání</string>
+    <string name="mode_selected">Čekám na potvrzení o přiřazení k vybranému pátrání</string>
+    <string name="mode_ready_for_tracking">Jsem připraven zahájit sledování. Pro sledování použij tlačítko Připojit.</string>
+    <string name="mode_tracking">Sleduji pohyb</string>
+
+    <string name="error_unexpected">Jsem zmaten. Toto jsem nečekal. Raději mě vypni a zapni.</string>
+
+</resources>
+
+
+
