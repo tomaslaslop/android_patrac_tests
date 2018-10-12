@@ -1,0 +1,7 @@
+#Internal package file, do not edit.
+#Thu Oct 11 14:41:31 CEST 2018
+0.baseType=DIRECTORY
+0.base=/Users/tomaslaslop/Documents/test/android_patrac/Application/build/intermediates/transforms/dexMerger/debug/19
+0.path=classes.dex
+0.set=DEX
+count=1

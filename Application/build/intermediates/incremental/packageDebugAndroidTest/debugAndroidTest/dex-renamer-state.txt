@@ -1,0 +1,4 @@
+#Wed Oct 10 15:37:30 CEST 2018
+base.0=/Users/tomaslaslop/Documents/test/android_patrac/Application/build/intermediates/transforms/dexMerger/androidTest/debug/0
+path.0=classes.dex
+renamed.0=classes.dex

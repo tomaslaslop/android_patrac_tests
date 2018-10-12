@@ -1,0 +1,1 @@
+cz.vsb.gis.ruz76.patrac.android.test
