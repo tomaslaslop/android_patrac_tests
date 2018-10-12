@@ -37,23 +37,7 @@ public class MainActivityTest {
             MainActivity.class);
 
     @Test
-    public void testMenuItems() throws InterruptedException {
-        onView(withText("MAPA")).check(matches(isDisplayed()));
-        Thread.sleep(2000);
-        onView(withText("PŘIPOJIT")).check(matches(isDisplayed()));
-        Thread.sleep(2000);
-        onView(withText("NASTAVENÍ")).check(matches(isDisplayed()));
-        Thread.sleep(2000);
-        onView(withText("ODESLAT ZPRÁVU")).check(matches(isDisplayed()));
-    }
-
-    @Test
-    public void testToolbarAppName() {
-        onView(withText("Pátrač Monitor")).check(matches(isDisplayed()));
-    }
-
-    @Test
-    public void testIntroText() throws InterruptedException {
+    public void testWelcomeMessageDisplayed() throws InterruptedException {
         onView(withText(getResourceString(R.string.welcome_message))).check(matches(isDisplayed()));
         Thread.sleep(2000);
     }
@@ -64,7 +48,24 @@ public class MainActivityTest {
     }
 
     @Test
+    public void testMenuItemsDisplayed() throws InterruptedException {
+        onView(withText("MAPA")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("PŘIPOJIT")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("NASTAVENÍ")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("ODESLAT ZPRÁVU")).check(matches(isDisplayed()));
+    }
+
+    @Test
+    public void testAppToolbarName() {
+        onView(withText("Pátrač Monitor")).check(matches(isDisplayed()));
+    }
+
+    @Test
     public void testMessageSent_negative_test() throws InterruptedException {
+        //With no connection to server
     onView(withId(R.id.send_message_action)).perform(click());
         Thread.sleep(2000);
     onView(withText("ODESLAT")).check(matches(isDisplayed()));
@@ -73,11 +74,13 @@ public class MainActivityTest {
         Thread.sleep(2000);
     onView(withId(R.id.send_message_action)).perform(click());
         Thread.sleep(5000);
-        //App should not Crash
+        //Actual result app Crash
+        //Expected result: App should not Crash but put some error message
 }
 
     @Test
     public void testMessageSent_positive_test() throws InterruptedException {
+        //With connection to server
         onView(withText("PŘIPOJIT")).check(matches(isDisplayed()));
         Thread.sleep(2000);
         onView(withText("PŘIPOJIT")).perform(click());
@@ -98,6 +101,7 @@ public class MainActivityTest {
 
     @Test
     public void testAttachmentSent_positive_test() throws InterruptedException {
+        //With connection to server
         onView(withText("PŘIPOJIT")).check(matches(isDisplayed()));
         Thread.sleep(2000);
         onView(withText("PŘIPOJIT")).perform(click());
@@ -140,9 +144,6 @@ public class MainActivityTest {
         Thread.sleep(2000);
         onView(withText("Sleduji pohyb")).check(matches(isDisplayed()));
         Thread.sleep(2000);
-        onView(withText("Vítejte v monitoru pátrače. Zmáčkněte tlačítko Připojit pro spojení se serverem. Aplikace odesílá vaši polohu na server. Štáb může sledovat vaši pozici v reálném čase. Pro běh potřebujete zapnutou GPS a datové připojení na Internet (např. 4G LTE). Štáb vám také může zaslat zprávu, včetně GPX souboru.")).check(matches(isDisplayed()));
-        Thread.sleep(2000);
-
     }
 
     @Test
@@ -199,5 +200,37 @@ public class MainActivityTest {
         Thread.sleep(2000);
         onView(withText("PŘIPOJIT")).perform(click());
         Thread.sleep(2000);
+    }
+
+    @Test
+    public void TapOnMap_negative_test() throws InterruptedException {
+        //With no External Location app open at background
+        onView(withText("MAPA")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("MAPA")).perform(click());
+        Thread.sleep(10000);
+    }
+
+    @Test
+    public void TapOnMap_positive_test() throws InterruptedException {
+        //With no External Location app open at background
+        onView(withText("MAPA")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("MAPA")).perform(click());
+        Thread.sleep(10000);
+        onView(withText("Stopy a pozice")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("Lokální stopa")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("Poslední pozice pátračů")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+        onView(withText("Stopy pátračů")).check(matches(isDisplayed()));
+        Thread.sleep(2000);
+//        onView(withText("Lokální stopa")).perform(click());
+//        Thread.sleep(10000);
+        //Actual result: app Crash
+        //Expected result: App should not Crash but put some error message
+        onView(withText("Poslední pozice pátračů")).perform(click());
+        Thread.sleep(10000);
     }
 }
