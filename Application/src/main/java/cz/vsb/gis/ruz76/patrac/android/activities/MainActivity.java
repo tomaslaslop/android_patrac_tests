@@ -59,6 +59,7 @@ import cz.vsb.gis.ruz76.patrac.android.helpers.GetRequest;
 import cz.vsb.gis.ruz76.patrac.android.domain.MessageFile;
 import cz.vsb.gis.ruz76.patrac.android.domain.RequestMode;
 import cz.vsb.gis.ruz76.patrac.android.domain.Waypoint;
+import cz.vsb.gis.ruz76.patrac.android.helpers.Notificator;
 
 /**
  * Main Activity.
@@ -102,6 +103,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
 
     protected Context context;
     protected LocationManager locationManager;
+    private Notificator notificator = new Notificator();
 
     // Create a List from String Array elements
     private List<String> messages_list;
@@ -148,6 +150,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
         mStatusText.setText(R.string.mode_sleeping);
         setSearchTimer();
         context = this.getApplicationContext();
+        notificator.setContext(context);
         sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         endPoint = sharedPrefs.getString("endpoint", getString(R.string.pref_default_endpoint));
         locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
@@ -375,7 +378,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
                 String[] searches = result.split("\n");
                 // TODO do it better
                 if (callOnDuty == null) {
-                    playRing();
+                    notificator.playRing();
                     callOnDuty = new Intent(MainActivity.this, CallOnDutyActivity.class);
                     callOnDuty.putExtra("searches", searches);
                     startActivity(callOnDuty);
@@ -669,7 +672,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
         }
         new AdapterHelper().update((ArrayAdapter) arrayAdapter, new ArrayList<Object>(messages_list));
         arrayAdapter.notifyDataSetChanged();
-        playRing();
+        notificator.playRing();
     }
 
     /**
@@ -690,19 +693,6 @@ public class MainActivity extends Activity implements LocationListener, GetReque
                 + getShortCoord(lat)
                 + "\n";
         mDataText.setText(content);
-    }
-
-    /**
-     * Plays the ring tone.
-     */
-    private void playRing() {
-        try {
-            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
-            r.play();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**

@@ -168,9 +168,11 @@
 
     <string name="message_send">Odeslat</string>
     <string name="message_attachment">Příloha</string>
-
     <string name="message_attachment_was_append">byla vložena</string>
     <string name="message_attachment_select">Vyberte přílohu</string>
+    <string name="message_attachment_can_not_be_zero_length">nemůže mít nulovou velikost souboru</string>
+    <string name="message_attachment_is_too_big">musí být menší než 10 MB</string>
+
     <string name="coordinator">Štáb</string>
 
     <string name="title_activity_call_on_duty">Aktuální pátrání</string>

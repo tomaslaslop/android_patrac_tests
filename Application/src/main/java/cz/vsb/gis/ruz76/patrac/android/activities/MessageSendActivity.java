@@ -6,19 +6,15 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
-import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.angads25.filepicker.controller.DialogSelectionListener;
@@ -39,13 +35,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
+import cz.vsb.gis.ruz76.patrac.android.adapters.UsersArrayAdapter;
+import cz.vsb.gis.ruz76.patrac.android.domain.User;
 import cz.vsb.gis.ruz76.patrac.android.helpers.AdapterHelper;
 import cz.vsb.gis.ruz76.patrac.android.helpers.GetRequestUpdate;
 import cz.vsb.gis.ruz76.patrac.android.R;
 import cz.vsb.gis.ruz76.patrac.android.helpers.GetRequest;
 
 public class MessageSendActivity extends FragmentActivity implements GetRequestUpdate {
-
 
     private List<User> users = null;
     private List<String> usersNamesList = null;
@@ -91,7 +88,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                 finish();
                 return true;
             case R.id.send_message_action:
-                EditText messageTextSend=(EditText)findViewById(R.id.messageTextSend);
+                EditText messageTextSend = (EditText) findViewById(R.id.messageTextSend);
                 message = messageTextSend.getText().toString();
                 try {
                     message = URLEncoder.encode(message, "UTF-8");
@@ -112,13 +109,13 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         String url = getString(R.string.pref_default_endpoint);
         RequestParams params = new RequestParams();
         String ids = "";
-        for (int counter = 0; counter<users.size(); counter++) {
+        for (int counter = 0; counter < users.size(); counter++) {
             User user = users.get(counter);
-            if (user.selected) {
+            if (user.isSelected()) {
                 if (counter == 0) {
-                    ids += user.id;
+                    ids += user.getId();
                 } else {
-                    ids += ";" + user.id;
+                    ids += ";" + user.getId();
                 }
             }
         }
@@ -141,7 +138,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                 Toast toast = Toast.makeText(MessageSendActivity.this, "OK", Toast.LENGTH_LONG);
                 toast.show();
             }
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             Toast toast = Toast.makeText(MessageSendActivity.this, "ERROR", Toast.LENGTH_LONG);
             toast.show();
         }
@@ -179,14 +176,21 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         dialog.setDialogSelectionListener(new DialogSelectionListener() {
             @Override
             public void onSelectedFilePaths(String[] files) {
-                //files is the array of the paths of files selected by the Application User.
-                //EditText messageTextSend=(EditText)findViewById(R.id.messageTextSend);
-                //String message = messageTextSend.getText().toString();
-                //for (int fileid = 0; fileid < files.length; fileid++) {
-                //message += " @" + files[0];
                 fileToUploadPath = files[0];
-                //}
-                //messageTextSend.setText(message);
+                File file = new File(fileToUploadPath);
+                long length = file.length();
+                if (length == 0) {
+                    Toast toast = Toast.makeText(MessageSendActivity.this, getString(R.string.message_attachment) + " " + getString(R.string.message_attachment_can_not_be_zero_length), Toast.LENGTH_LONG);
+                    toast.show();
+                    fileToUploadPath = null;
+                    return;
+                }
+                if (length > 10_000_000L) {
+                    Toast toast = Toast.makeText(MessageSendActivity.this, getString(R.string.message_attachment) + " " + getString(R.string.message_attachment_is_too_big), Toast.LENGTH_LONG);
+                    toast.show();
+                    fileToUploadPath = null;
+                    return;
+                }
                 Toast toast = Toast.makeText(MessageSendActivity.this, getString(R.string.message_attachment) + " " + getString(R.string.message_attachment_was_append), Toast.LENGTH_LONG);
                 toast.show();
             }
@@ -209,7 +213,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         //arrayAdapter = new ArrayAdapter<String>
         //        (this, android.R.layout.simple_list_item_1, usersNamesList);
 
-        arrayAdapter = new MySimpleArrayAdapter(this, android.R.layout.simple_list_item_1, users, usersNamesList);
+        arrayAdapter = new UsersArrayAdapter(this, android.R.layout.simple_list_item_1, users, usersNamesList);
 
         // DataBind ListView with items from ArrayAdapter
         final ListView usersListView = (ListView) findViewById(R.id.usersListView);
@@ -220,17 +224,17 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         usersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (users.get(position).selected) {
-                    users.get(position).selected = false;
+                if (users.get(position).isSelected()) {
+                    users.get(position).setSelected(false);
                     usersListView.setItemChecked(position, false);
                     view.setBackgroundColor(Color.TRANSPARENT);
                 } else {
-                    users.get(position).selected = true;
+                    users.get(position).setSelected(true);
                     usersListView.setItemChecked(position, true);
                     view.setBackgroundColor(Color.LTGRAY);
                 }
-                EditText messageTextSend=(EditText)findViewById(R.id.messageTextSend);
-                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                EditText messageTextSend = (EditText) findViewById(R.id.messageTextSend);
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(messageTextSend.getWindowToken(), 0);
                 //messageTextSend.onEditorAction(EditorInfo.IME_ACTION_DONE);
             }
@@ -239,8 +243,8 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         usersListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                for(User user : users) {
-                    user.selected = longClick;
+                for (User user : users) {
+                    user.setSelected(longClick);
                 }
                 longClick = !longClick;
                 arrayAdapter.notifyDataSetChanged();
@@ -252,11 +256,12 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
 
     /**
      * It is triggered when the download of the data from Download is finished.
+     *
      * @param result response from the server
      */
     public void processResponse(String result) {
         if (result != null) {
-           // List of users
+            // List of users
             String[] lines = result.split("\n");
             for (int lineid = 0; lineid < lines.length; lineid++) {
                 String[] items = lines[lineid].split(";");
@@ -267,7 +272,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                 arrayAdapter.notifyDataSetChanged();
             }
         } else {
-           // no info
+            // no info
         }
     }
 
@@ -275,88 +280,5 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         GetRequest getRequest = new GetRequest();
         getRequest.setActivity(this);
         getRequest.execute(url);
-    }
-
-    class MySimpleArrayAdapter extends ArrayAdapter<String> {
-
-        Context context;
-        int resource;
-        List<String> strings;
-        List<User> objects;
-
-        public MySimpleArrayAdapter(@NonNull Context context, int resource, @NonNull List<User> objects, List<String> strings) {
-            super(context, resource, strings);
-            this.context = context;
-            this.resource = resource;
-            this.strings = strings;
-            this.objects = objects;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            LayoutInflater inflater = (LayoutInflater) context
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View rowView = inflater.inflate(R.layout.rowbutton, parent, false);
-            TextView textView = (TextView) rowView.findViewById(R.id.label);
-            textView.setText(((User) objects.get(position)).name);
-
-            if (((User) objects.get(position)).selected) {
-                rowView.setBackgroundColor(Color.LTGRAY);// set your color
-            } else {
-                rowView.setBackgroundColor(Color.TRANSPARENT);
-            }
-
-            return rowView;
-        }
-    }
-
-    class User {
-        String id;
-        String name;
-        boolean selected;
-        User(String id, String name, boolean selected) {
-            this.id = id;
-            this.name = name;
-            this.selected = selected;
-        }
-    }
-
-    /**
-     * Background Async Task to send the message file
-     * */
-    class SendMessageToURL extends AsyncTask<String, String, String> {
-
-        /**
-         * Before starting background thread Show Progress Bar Dialog
-         * */
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
-            StrictMode.setVmPolicy(builder.build());
-        }
-
-        /**
-         * Downloading file in background thread
-         * */
-        @Override
-        protected String doInBackground(String... f_url) {
-            // https://stackoverflow.com/questions/11766878/sending-files-using-post-with-httpurlconnection
-            // https://ashwinrayaprolu.wordpress.com/2010/11/16/upload-file-to-server-from-java-client-without-any-library/
-            int count;
-            String f_url_parts[] = f_url[0].split("/");
-            try {
-                URL url = new URL(f_url[0]);
-                URLConnection conection = url.openConnection();
-                conection.connect();
-                //TODO check output - maybe
-
-            } catch (Exception e) {
-                cancel(true);
-            }
-
-            return null;
-        }
     }
 }
