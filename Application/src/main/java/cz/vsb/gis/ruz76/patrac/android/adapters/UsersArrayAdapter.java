@@ -38,10 +38,10 @@ public class UsersArrayAdapter extends ArrayAdapter<String> {
         LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.rowbutton, parent, false);
-        TextView textView = (TextView) rowView.findViewById(R.id.label);
-        textView.setText(((User) objects.get(position)).getName());
+        TextView textView = rowView.findViewById(R.id.label);
+        textView.setText(objects.get(position).getName());
 
-        if (((User) objects.get(position)).isSelected()) {
+        if (objects.get(position).isSelected()) {
             rowView.setBackgroundColor(Color.LTGRAY);// set your color
         } else {
             rowView.setBackgroundColor(Color.TRANSPARENT);

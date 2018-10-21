@@ -63,7 +63,7 @@ public class CallOnDutyActivity extends Activity {
         }
         arrayAdapter = new ArrayAdapter<String>
                 (this, android.R.layout.simple_list_item_1, searchesList);
-        listViewSearches = (ListView) findViewById(R.id.listViewSearches);
+        listViewSearches = findViewById(R.id.listViewSearches);
 
         // DataBind ListView with items from ArrayAdapter
         listViewSearches.setAdapter(arrayAdapter);
@@ -78,7 +78,7 @@ public class CallOnDutyActivity extends Activity {
             }
         });
 
-        TextView textViewDutyDescription = (TextView) findViewById(R.id.textViewDutyDescription);
+        TextView textViewDutyDescription = findViewById(R.id.textViewDutyDescription);
         textViewDutyDescription.setText(getString(R.string.activity_call_on_duty_description));
 
         setupActionBar();

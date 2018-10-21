@@ -204,9 +204,9 @@ public class MainActivity extends Activity implements LocationListener, GetReque
      * Extracts gui items to variables to be better accessible.
      */
     private void extractGuiItems() {
-        mDataText = (TextView) findViewById(R.id.data_text);
-        mStatusText = (TextView) findViewById(R.id.status_text);
-        messagesListView = (ListView) findViewById(R.id.messagesListView);
+        mDataText = findViewById(R.id.data_text);
+        mStatusText = findViewById(R.id.status_text);
+        messagesListView = findViewById(R.id.messagesListView);
     }
 
     /**
@@ -670,7 +670,7 @@ public class MainActivity extends Activity implements LocationListener, GetReque
         } else {
             messages_list.add(0, items[4].substring(0, items[4].length() - 3).split(" ")[1] + ": " + items[2]);
         }
-        new AdapterHelper().update((ArrayAdapter) arrayAdapter, new ArrayList<Object>(messages_list));
+        new AdapterHelper().update(arrayAdapter, new ArrayList<Object>(messages_list));
         arrayAdapter.notifyDataSetChanged();
         notificator.playRing();
     }

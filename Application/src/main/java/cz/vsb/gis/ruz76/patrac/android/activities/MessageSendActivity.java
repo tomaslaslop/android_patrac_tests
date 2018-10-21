@@ -88,7 +88,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                 finish();
                 return true;
             case R.id.send_message_action:
-                EditText messageTextSend = (EditText) findViewById(R.id.messageTextSend);
+                EditText messageTextSend = findViewById(R.id.messageTextSend);
                 message = messageTextSend.getText().toString();
                 try {
                     message = URLEncoder.encode(message, "UTF-8");
@@ -216,7 +216,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
         arrayAdapter = new UsersArrayAdapter(this, android.R.layout.simple_list_item_1, users, usersNamesList);
 
         // DataBind ListView with items from ArrayAdapter
-        final ListView usersListView = (ListView) findViewById(R.id.usersListView);
+        final ListView usersListView = findViewById(R.id.usersListView);
         usersListView.setAdapter(arrayAdapter);
 
         usersListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -233,7 +233,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                     usersListView.setItemChecked(position, true);
                     view.setBackgroundColor(Color.LTGRAY);
                 }
-                EditText messageTextSend = (EditText) findViewById(R.id.messageTextSend);
+                EditText messageTextSend = findViewById(R.id.messageTextSend);
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(messageTextSend.getWindowToken(), 0);
                 //messageTextSend.onEditorAction(EditorInfo.IME_ACTION_DONE);
@@ -268,7 +268,7 @@ public class MessageSendActivity extends FragmentActivity implements GetRequestU
                 User user = new User(items[0], items[3], false);
                 users.add(1, user);
                 usersNamesList.add(1, items[3]);
-                new AdapterHelper().update((ArrayAdapter) arrayAdapter, new ArrayList<Object>(usersNamesList));
+                new AdapterHelper().update(arrayAdapter, new ArrayList<Object>(usersNamesList));
                 arrayAdapter.notifyDataSetChanged();
             }
         } else {

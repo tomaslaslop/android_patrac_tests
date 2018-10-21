@@ -86,7 +86,7 @@ public class MapsActivity extends Activity implements LocationListener, GetReque
         setContentView(R.layout.activity_maps);
         setTitle(getString(R.string.tracks));
 
-        mTextStatus = (TextView) findViewById(R.id.textViewStatus);
+        mTextStatus = findViewById(R.id.textViewStatus);
 
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
@@ -103,7 +103,7 @@ public class MapsActivity extends Activity implements LocationListener, GetReque
         arrayAdapter = new ArrayAdapter<String>
                 (this, android.R.layout.simple_list_item_1, gpx_list);
 
-        gpxListView = (ListView) findViewById(R.id.gpxListView);
+        gpxListView = findViewById(R.id.gpxListView);
         gpxListView.setAdapter(arrayAdapter);
 
         setupActionBar();
@@ -149,7 +149,7 @@ public class MapsActivity extends Activity implements LocationListener, GetReque
             newlon = locationGPS.getLongitude();
         }
 
-        map = (MapView) findViewById(R.id.map);
+        map = findViewById(R.id.map);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setBuiltInZoomControls(true);
         map.setMultiTouchControls(true);
